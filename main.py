@@ -264,12 +264,13 @@ def main():
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
     port = int(os.getenv('PORT', 5000))
 
     print("Starting app on port %d" % port)
 
     app.run(debug=False, port=port, host='0.0.0.0')
+
+    updater.idle()
 
 
 if __name__ == '__main__':
