@@ -102,7 +102,7 @@ def send_result_options_buttons(chat_id, bot):
     most_cheap = telegram.KeyboardButton(text="Самые дешевые 💰")
     most_expensive = telegram.KeyboardButton(text="Самые дорогие 💎")
     most_cool = telegram.KeyboardButton(text="Самые крутые 💖")
-    custom_keyboard = [[more_butt],[most_cheap, most_cool, most_expensive]]
+    custom_keyboard = [[more_butt], [most_cheap, most_cool, most_expensive]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
     bot.send_message(chat_id=chat_id, text="и есть еще...", reply_markup=reply_markup)
     pass
@@ -190,7 +190,7 @@ def echo(bot, update):
                     'place': 'http://4sq.com/1zUuio6'})
 
             for x in test_date['items']:
-                update.message.reply_markdown('*' + x['item'] + '*' + '    ' + '₽ ' + x['cost'] + '\n' +
+                update.message.reply_markdown('*' + x['item'] + '*' + '    ' + '₽ ' + '*' + x['cost'] + '*' + '\n' +
                                               '_' + ",".join([y for y in x['ingrs']]) + '_' + '\n' +
                                               x['place'])
             send_result_options_buttons(chat_id, bot)
