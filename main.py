@@ -236,6 +236,7 @@ def location(bot, update):
     user_location = update.message.location
     logger.info("Location of %s: %f / %f", user.first_name, user_location.latitude,
                 user_location.longitude)
+    update.message.reply_text('Отлично!')
     if not save_user_location(update.message.chat_id, user, user_location):
         logger.error("Failed to save data to menuet")
     update.message.reply_text("Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !")
@@ -267,9 +268,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
     port = int(os.getenv('PORT', 5000))
 
     print("Starting app on port %d" % port)
 
     app.run(debug=False, port=port, host='0.0.0.0')
+    main()
