@@ -5,6 +5,7 @@ from __future__ import print_function
 import json
 import random
 
+import os
 import telegram
 from future.standard_library import install_aliases
 
@@ -20,6 +21,16 @@ import dialogflow
 import datetime
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
+from flask import Flask
+
+
+app = Flask(__name__)
+import requests
+
+
+@app.route('/', methods=['POST, GET'])
+def index():
+    return "Forbidden"
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -257,3 +268,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+    port = int(os.getenv('PORT', 5000))
+
+    print("Starting app on port %d" % port)
+
+    app.run(debug=False, port=port, host='0.0.0.0')
