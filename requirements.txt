@@ -1,0 +1,4 @@
+dialogflow
+future>=0.16.0
+requests
+python-telegram-bot
