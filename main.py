@@ -14,6 +14,12 @@ install_aliases()
 import apiai
 
 CLIENT_ACCESS_TOKEN = '114a4b10c66c46dca27ad6f63cdc2ced'
+
+
+class USER:
+    LOCATION = 'last_location'
+
+
 # [START import_libraries]
 import uuid
 import requests
@@ -98,7 +104,9 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
 # update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
     """Send a message when the command /start is issued."""
-    update.message.reply_text('Hi!')
+    session = get_user_session(update.message.from_user)
+    parse_query(bot, update.message.chat_id, session, update, 'шалом')
+    ask_user_location(update.message.chat_id, bot, update)
 
 
 def help(bot, update):
@@ -145,7 +153,8 @@ def get_user_session(user):
         'timestamp': datetime.datetime.now().timestamp(),
         'lifetime': 30 * 60,  # 30 min
         'last_location': None,
-        'last_msg': None
+        'last_msg': '',
+        'last_action': None
     })
     return session
 
@@ -175,7 +184,9 @@ def get_user_last_location(user):
 def get_food_for_user_with_loc(bot, update, food):
     session = check_user_context(update.message.from_user)
     if session is None:
+        set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
         ask_user_location(chat_id=update.message.chat_id, bot=bot, update=update)
+        return None
     # should not be None
     user_location = get_from_memory_DB(update.message.from_user, 'last_location')
 
@@ -198,7 +209,7 @@ def get_food_for_user_with_loc(bot, update, food):
     return test_data
 
 
-def add_to_memory_DB(user, key, value):
+def set_to_memory_DB(user, key, value):
     for item in MEMORY_DB['users_context']:
         if item['user_id'] == user.id:
             item[key] = value
@@ -220,42 +231,53 @@ def echo(bot, update):
 
     chat_id = update.message.chat_id
     logger.warning(text)
+    # First check if we have a session
+    # Dont care about question
     session = check_user_context(update.message.from_user)
     # create new session if not exist
     if session is None:
-        get_user_session(update.message.from_user)
-        add_to_memory_DB(user=update.message.from_user, key='last_msg', value=update.message.text)
-    response = parse_query(bot, chat_id, session, update, get_from_memory_DB(update.message.from_user, 'last_msg'))
+        session = get_user_session(update.message.from_user)
+        set_to_memory_DB(user=update.message.from_user, key='last_msg', value=update.message.text)
+    # do we have msg from user or its a new request ?
+    last_msg = get_from_memory_DB(update.message.from_user, 'last_msg')
+    last_action = get_from_memory_DB(update.message.from_user, 'last_action')
+    if (last_msg == '' or last_msg is None) and last_action == 'location':
+        update.message.reply_text('Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !')
+        set_to_memory_DB(update.message.from_user, 'last_action', '')
 
-    # From dialog flow
-    action = response['result']['action']
-    if action == 'input.welcome':
-        ask_user_location(chat_id, bot, update)
-        update.message.reply_text(
-            "Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !")
-    elif action == 'get-food':
-        # do we know where user is ?
-        location = get_from_memory_DB(update.message.from_user, 'last_loc')
-        if location is None:
+    else:
+        response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
+        set_to_memory_DB(update.message.from_user, 'last_msg', '')
+        # From dialog flow
+        action = response['result']['action']
+        if action == 'input.welcome':
+            set_to_memory_DB(update.message.from_user, 'last_msg', '')
             ask_user_location(chat_id, bot, update)
-        resp = get_food_for_user_with_loc(bot, update, response['result']['parameters']['food'])
-        if resp is None:  # not resp:
-            update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
-        else:
-            # TODO: add response
-            # expected structure
-            # { item: <>
-            # ingrs: []
-            # cost: <>
-            # place: link to addr
-            #
-            for x in resp['items']:
-                update.message.reply_markdown('*' + x['item'] + '*' + '    ' + '₽ ' + '*' + x['cost'] + '*' + '\n' +
-                                              '_' + ",".join([y for y in x['ingrs']]) + '_' + '\n' +
-                                              x['place'])
-            send_result_options_buttons(chat_id, bot)
-    # detect_intent_texts(
-    #     PROJECT_ID, session, text, lang_code)
+        elif action == 'get-food':
+            # do we know where user is ?
+            location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
+            if location is None:
+                ask_user_location(chat_id, bot, update)
+                set_to_memory_DB(update.message.from_user, 'last_msg', text)
+                return
+            resp = get_food_for_user_with_loc(bot, update, response['result']['parameters']['food'])
+            if resp is None:  # not resp:
+                update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
+            else:
+                # TODO: add response
+                # expected structure
+                # { item: <>
+                # ingrs: []
+                # cost: <>
+                # place: link to addr
+                #
+                for x in resp['items']:
+                    update.message.reply_markdown('*' + x['item'] + '*' + '    ' + '₽ ' + '*' + x['cost'] + '*' + '\n' +
+                                                  '_' + ",".join([y for y in x['ingrs']]) + '_' + '\n' +
+                                                  x['place'])
+                send_result_options_buttons(chat_id, bot)
+        # detect_intent_texts(
+        #     PROJECT_ID, session, text, lang_code)
 
 
 def parse_query(bot, chat_id, session, update, msg):
@@ -300,24 +322,24 @@ def location(bot, update):
     user_location = update.message.location
     logger.info("Location of %s: %f / %f", user.first_name, user_location.latitude,
                 user_location.longitude)
-    add_to_memory_DB(update.message.from_user, 'last_location', user_location)
+    set_to_memory_DB(update.message.from_user, 'last_location', user_location)
     update.message.reply_text('Отлично!')
     if not save_user_location(update.message.chat_id, user, user_location):
         logger.error("Failed to save data to menuet")
-    if get_from_memory_DB(user, 'last_msg') is not None:
-        echo(bot, update)
-        return
+    set_to_memory_DB(update.message.from_user, 'last_action', 'location')
+
+    echo(bot, update)
     return BIO
 
 
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
-    og cmnsd
     updater = Updater("534041755:AAF8uLqAWAFsOY7jqPRwaT_LyFUoFdNogbY")
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
+    dp.add_handler(CommandHandler('start', start))
     dp.add_handler(MessageHandler(Filters.location, location))
     # on noncommand i.e message - echo the message on Telegram
 
