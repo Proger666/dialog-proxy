@@ -313,6 +313,7 @@ def location(bot, update):
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
+    og cmnsd
     updater = Updater("534041755:AAF8uLqAWAFsOY7jqPRwaT_LyFUoFdNogbY")
 
     # Get the dispatcher to register handlers
