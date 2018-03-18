@@ -186,7 +186,7 @@ def get_food_for_user_with_loc(bot, update, food):
     r = requests.post(MENUET_API, json.dumps(payload), verify=False)
     if r.status_code != 200:
         logger.warning("we failed to get data from menuet for food " + food + " chat_id:")
-        #return None
+        # return None
     test_data = {'items': []}
     for i in range(0, 3):
         test_data['items'].append({
@@ -225,36 +225,37 @@ def echo(bot, update):
     if session is None:
         get_user_session(update.message.from_user)
         add_to_memory_DB(user=update.message.from_user, key='last_msg', value=update.message.text)
-        ask_user_location(chat_id, bot, update)
-    else:
-        session = session
+    response = parse_query(bot, chat_id, session, update, get_from_memory_DB(update.message.from_user, 'last_msg'))
 
-        response = parse_query(bot, chat_id, session, update, get_from_memory_DB(update.message.from_user, 'last_msg'))
-        # From dialog flow
-        action = response['result']['action']
-        if action == 'input.welcome':
+    # From dialog flow
+    action = response['result']['action']
+    if action == 'input.welcome':
+        ask_user_location(chat_id, bot, update)
+        update.message.reply_text(
+            "Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !")
+    elif action == 'get-food':
+        # do we know where user is ?
+        location = get_from_memory_DB(update.message.from_user, 'last_loc')
+        if location is None:
             ask_user_location(chat_id, bot, update)
-            update.message.reply_text(
-                "Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !")
-        elif action == 'get-food':
-            resp = get_food_for_user_with_loc(bot, update, response['result']['parameters']['food'])
-            if resp is None:  # not resp:
-                update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
-            else:
-                # TODO: add response
-                # expected structure
-                # { item: <>
-                # ingrs: []
-                # cost: <>
-                # place: link to addr
-                #
-                for x in resp['items']:
-                    update.message.reply_markdown('*' + x['item'] + '*' + '    ' + '₽ ' + '*' + x['cost'] + '*' + '\n' +
-                                                  '_' + ",".join([y for y in x['ingrs']]) + '_' + '\n' +
-                                                  x['place'])
-                send_result_options_buttons(chat_id, bot)
-        # detect_intent_texts(
-        #     PROJECT_ID, session, text, lang_code)
+        resp = get_food_for_user_with_loc(bot, update, response['result']['parameters']['food'])
+        if resp is None:  # not resp:
+            update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
+        else:
+            # TODO: add response
+            # expected structure
+            # { item: <>
+            # ingrs: []
+            # cost: <>
+            # place: link to addr
+            #
+            for x in resp['items']:
+                update.message.reply_markdown('*' + x['item'] + '*' + '    ' + '₽ ' + '*' + x['cost'] + '*' + '\n' +
+                                              '_' + ",".join([y for y in x['ingrs']]) + '_' + '\n' +
+                                              x['place'])
+            send_result_options_buttons(chat_id, bot)
+    # detect_intent_texts(
+    #     PROJECT_ID, session, text, lang_code)
 
 
 def parse_query(bot, chat_id, session, update, msg):
