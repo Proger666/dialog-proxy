@@ -192,7 +192,8 @@ def get_food_for_user_with_loc(bot, update, food):
 
     payload = {'action': 'get_food_loc', 'token': MENUET_TOKEN,
                'user_id': update.message.from_user.id,
-               'query': food}
+               'query': food,
+               "location": user_location}
     # send to backend
     r = requests.post(MENUET_API, json.dumps(payload), verify=False)
     if r.status_code != 200:
