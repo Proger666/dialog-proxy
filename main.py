@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 LOCATION, BIO = range(2)
 
 ################### MENUET INTEGRATION ###########
-MENUET_API = "https://127.0.0.1:8000/menuet/bot/api"
+MENUET_API = "https://scorpa.ml/menuet/bot/api"
 MENUET_TOKEN = "ya29.c.El97BacMtcOVmFuQGwApUY-EikgCG8YtGI2C6oAt73Gd9AsHFBntwabQElx-9ZIQJSRvIBprUaRqDvHo2JHZCOTW8Z80u2FH8k9XlsL1Lqeg"
 ##################################################
 ### DIALOGFLOW ####
