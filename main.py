@@ -62,7 +62,7 @@ MEMORY_DB = {'users_context': []}
 # Structure
 # 'user_id': user.id,
 # 'session': session,
-# 'timestamp': datetime.datetime.now().timestamp(),
+# 'timestamp': datetime.datetime.now(),
 # 'lifetime': 30 * 60  # 30 min
 # 'last_location': None
 
@@ -135,6 +135,12 @@ def send_result_options_buttons(chat_id, bot):
     pass
 
 
+def remove_session_from_db(user):
+    # remove sessiion from DB
+    MEMORY_DB['users_context'] = [x for x in MEMORY_DB['users_context'] if x['user_id'] != user.id]
+    pass
+
+
 def get_user_session(user):
     user_context = []
     session = None
@@ -143,6 +149,8 @@ def get_user_session(user):
             if datetime.datetime.now().timestamp() - user_context['timestamp'] <= user_context['lifetime']:
                 return user_context['session']
             else:
+                remove_session_from_db(user)
+
                 break
     # create new session for DIALOGFLOW
     session = str(uuid.uuid4())
@@ -165,6 +173,7 @@ def check_user_context(user):
             if datetime.datetime.now().timestamp() - user_context['timestamp'] <= user_context['lifetime']:
                 return user_context['session']
             else:
+                remove_session_from_db(user)
                 break
     return None
 
@@ -330,8 +339,10 @@ def echo(bot, update):
                 reply_nothing_found(update,bot)
             elif resp['msg'] == 'no more':
                 update.message.reply_text('Больше ничего не нашли :(')
+                return
             elif resp['msg'] == 500:
                 update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
+                return
             for x in resp['items']:
                 update.message.reply_markdown(
                     '*' + x['item'] + '*' + '    ' + '₽ ' + '*' + str(x['cost']) + '*' + '\n' +
