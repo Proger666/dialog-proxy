@@ -123,12 +123,17 @@ def ask_user_location(chat_id, bot, update):
                      reply_markup=reply_markup)
     pass
 
+################# BUTTONS DEFINITION ###############
+MORE_BUTT = "ЕЩЕ! 👉"
+MOST_CHEAP_BUTT = "Самые дешевые 💰"
+MOST_LUX_BUTT = "Самые дорогие 💎"
+AWESOMESS_BUTT = "Самые крутые 💖"
 
 def send_result_options_buttons(chat_id, bot):
-    more_butt = telegram.KeyboardButton(text="ЕЩЕ! 👉")
-    most_cheap = telegram.KeyboardButton(text="Самые дешевые 💰")
-    most_expensive = telegram.KeyboardButton(text="Самые дорогие 💎")
-    most_cool = telegram.KeyboardButton(text="Самые крутые 💖")
+    more_butt = telegram.KeyboardButton(text=MORE_BUTT)
+    most_cheap = telegram.KeyboardButton(text=MOST_CHEAP_BUTT)
+    most_expensive = telegram.KeyboardButton(text=MOST_LUX_BUTT)
+    most_cool = telegram.KeyboardButton(text=AWESOMESS_BUTT)
     custom_keyboard = [[more_butt], [most_cheap, most_cool, most_expensive]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
     bot.send_message(chat_id=chat_id, text="и есть еще...", reply_markup=reply_markup)
@@ -189,7 +194,7 @@ def get_user_last_location(user):
     return None
 
 
-def get_food_for_user_with_loc(bot, update, food):
+def get_food_for_user_with_loc(bot, update, food, sort):
     session = check_user_context(update.message.from_user)
     if session is None:
         set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
@@ -202,7 +207,8 @@ def get_food_for_user_with_loc(bot, update, food):
                'user_id': update.message.from_user.id,
                'query': food,
                "loc_lng": user_location['longitude'],
-               "loc_lat": user_location['latitude']}
+               "loc_lat": user_location['latitude'],
+               "sort": sort}
     # send query to backend
     headers = {'Content-type': 'application/json'}
     r = requests.post(MENUET_API, json.dumps(payload), verify=False, headers=headers)
@@ -254,14 +260,14 @@ def reply_nothing_found(update, bot):
     update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
 
 
-def find_and_post_food(update, bot, query):
+def find_and_post_food(update, bot, query, sort):
     # do we know where user is ?
     location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
     if location is None:
         ask_user_location(update.message.chat_id, bot, update)
         set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
         return
-    resp = get_food_for_user_with_loc(bot, update, query)
+    resp = get_food_for_user_with_loc(bot, update, query, sort)
     if resp is None:  # not resp:
         reply_nothing_found(update, bot)
     elif len(resp) == 0:
@@ -323,13 +329,20 @@ def echo(bot, update):
         set_to_memory_DB(update.message.from_user, 'last_action', '')
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
 
-    #### REMEMBER OUR QUERY ####
 
-    if update.message.text == 'ЕЩЕ! 👉':
-        action = 'get-food'
-        last_query = get_from_memory_DB(update.message.from_user, 'last_query')
-        find_and_post_food(update,bot, last_query)
-        set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
+    if update.message.text == MORE_BUTT:
+        find_again_with_sort(bot, update, 'more')
+        return
+    elif update.message.text == AWESOMESS_BUTT:
+        find_again_with_sort(bot, update, 'awessome')
+        return
+    elif update.message.text == MOST_LUX_BUTT:
+        find_again_with_sort(bot, update, 'lux')
+        return
+    elif update.message.text == MOST_CHEAP_BUTT:
+        find_again_with_sort(bot, update, 'cheap')
+        return
+
 
     #### PARSE QUESTION #######
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
@@ -362,12 +375,20 @@ def echo(bot, update):
             return
     elif action == 'get-food':
         update.message.reply_text(response['result']['fulfillment']['speech'])
-        find_and_post_food(update,bot, response['result']['parameters']['food'])
+        find_and_post_food(update,bot, response['result']['parameters']['food'], None)
         set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
     else:
          update.message.reply_text(response['result']['fulfillment']['speech'])
     # detect_intent_texts(
     #     PROJECT_ID, session, text, lang_code)
+
+
+def find_again_with_sort(bot, update, sort):
+    action = 'get-food'
+    last_query = get_from_memory_DB(update.message.from_user, 'last_query')
+    find_and_post_food(update, bot, last_query, sort)
+    #### REMEMBER OUR QUERY ####
+    set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
 
 
 def parse_query(bot, chat_id, session, update, msg):
