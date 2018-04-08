@@ -254,6 +254,49 @@ def reply_nothing_found(update, bot):
     update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
 
 
+def find_and_post_food(update, bot, query):
+    # do we know where user is ?
+    location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
+    if location is None:
+        ask_user_location(update.message.chat_id, bot, update)
+        set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
+        return
+    resp = get_food_for_user_with_loc(bot, update, query)
+    if resp is None:  # not resp:
+        reply_nothing_found(update, bot)
+    elif len(resp) == 0:
+        reply_nothing_found(update, bot)
+        # ALWAYS USE FUCKING GET!!!! not direct point to list name!!
+
+    elif resp.get('status') == 'error':
+        reply_nothing_found(update, bot)
+        logger.error('MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user.id, 'last_msg')))
+
+    else:
+        # TODO: add response
+        # expected structure
+        # { item: <>
+        # ingrs: []
+        # cost: <>
+        # place: link to addr
+        #
+        if len(resp) == 0:
+            reply_nothing_found(update, bot)
+        elif resp['msg'] == 'no more':
+            update.message.reply_text('Больше ничего не нашли :(')
+            return
+        elif resp['msg'] == 500:
+            update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
+            return
+        for x in resp['items']:
+            update.message.reply_markdown(
+                '*' + x['item'] + '*' + '    ' + '₽ ' + '*' + str(x['cost']) + '*' + '\n' +
+                '_' + x['ingrs'] + '_' + '\n' +
+                '*' + x['rest_name'] + '*' + '\n' +
+                x['rest_addr'])
+        send_result_options_buttons(update.message.chat_id, bot)
+
+
 def echo(bot, update):
     """Echo the user message."""
     text = update.message.text
@@ -279,13 +322,22 @@ def echo(bot, update):
         update.message.reply_text('Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !')
         set_to_memory_DB(update.message.from_user, 'last_action', '')
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
+
+    #### REMEMBER OUR QUERY ####
+
+    if update.message.text == 'ЕЩЕ! 👉':
+        action = 'get-food'
+        last_query = get_from_memory_DB(update.message.from_user, 'last_query')
+        find_and_post_food(update,bot, last_query)
+        set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
+
     #### PARSE QUESTION #######
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     # From dialog flow get action
     action = response['result']['action']
 
     #### IS IT WELCOME REQUEST ?
-    if action != 'input.welcome':
+    if get_from_memory_DB(update.message.from_user,USER.LAST_D_ACTION) == 'input.welcome':
         # since we parsed question - remove last msg
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
 
@@ -311,45 +363,9 @@ def echo(bot, update):
 
     elif action == 'get-food':
         update.message.reply_text(response['result']['fulfillment']['speech'])
-        # do we know where user is ?
-        location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
-        if location is None:
-            ask_user_location(chat_id, bot, update)
-            set_to_memory_DB(update.message.from_user, 'last_msg', text)
-            return
-        resp = get_food_for_user_with_loc(bot, update, response['result']['parameters']['food'])
-        if resp is None:  # not resp:
-            reply_nothing_found(update,bot)
-            # ALWAYS USE FUCKING GET!!!! not direct point to list name!!
-        elif len(resp) == 0:
-            reply_nothing_found(update, bot)
-        elif resp.get('status') == 'error':
-            reply_nothing_found(update,bot)
-            logger.error('MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user.id, 'last_msg')))
+        find_and_post_food(update,bot, response['result']['parameters']['food'])
+        set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
 
-        else:
-            # TODO: add response
-            # expected structure
-            # { item: <>
-            # ingrs: []
-            # cost: <>
-            # place: link to addr
-            #
-            if len(resp) == 0:
-                reply_nothing_found(update,bot)
-            elif resp['msg'] == 'no more':
-                update.message.reply_text('Больше ничего не нашли :(')
-                return
-            elif resp['msg'] == 500:
-                update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
-                return
-            for x in resp['items']:
-                update.message.reply_markdown(
-                    '*' + x['item'] + '*' + '    ' + '₽ ' + '*' + str(x['cost']) + '*' + '\n' +
-                    '_' + x['ingrs'] + '_' + '\n' +
-                    '*' + x['rest_name'] + '*' + '\n' +
-                    x['rest_addr'])
-            send_result_options_buttons(chat_id, bot)
     # detect_intent_texts(
     #     PROJECT_ID, session, text, lang_code)
 
