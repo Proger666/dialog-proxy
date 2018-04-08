@@ -365,7 +365,8 @@ def echo(bot, update):
         update.message.reply_text(response['result']['fulfillment']['speech'])
         find_and_post_food(update,bot, response['result']['parameters']['food'])
         set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
-    update.message.reply_text(response['result']['fulfillment']['speech'])
+     else:
+         update.message.reply_text(response['result']['fulfillment']['speech'])
     # detect_intent_texts(
     #     PROJECT_ID, session, text, lang_code)
 
