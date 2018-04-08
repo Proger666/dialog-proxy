@@ -360,7 +360,6 @@ def echo(bot, update):
             ask_user_location(chat_id, bot, update)
             set_to_memory_DB(update.message.from_user, 'last_msg', text)
             return
-
     elif action == 'get-food':
         update.message.reply_text(response['result']['fulfillment']['speech'])
         find_and_post_food(update,bot, response['result']['parameters']['food'])
