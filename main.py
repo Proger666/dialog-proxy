@@ -297,7 +297,7 @@ def find_and_post_food(update, bot, query, sort):
         for x in resp['items']:
             update.message.reply_markdown(
                 '*' + x['item'] + '*' + '    ' + '*' + str(x['cost']) + '*'+ ' ₽' + '\n' +
-                '_' + x['ingrs'] + '_' + '\n' +
+                '_' + x['ingrs'] + '_' + ' \n' +
                 '*' + x['rest_name'] + '*' + '\n' +
                 x['rest_addr'])
         send_result_options_buttons(update.message.chat_id, bot)
