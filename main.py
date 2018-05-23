@@ -297,10 +297,10 @@ def find_and_post_food(update, bot, query, sort):
             update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
             return
         for x in resp['items']:
-            print(",".join(x.get('ingrs', "")))
+            print(x)
             update.message.reply_markdown(
                 '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*' + ' ₽' + '\n' +
-                '_' + ",".join(x.get('ingrs', "")) + '_' + ' \n' +
+                '_' + ",".join(x.get('item_ingrs', "")) + '_' + ' \n' +
                 '*' + x.get('rest_name', "") + '*' + '\n' +
                 "[" + x.get('rest_addr', "") + "]" + "(https://maps.google.com/?q=" + x.get('rest_addr', "") + ")",
                 disable_web_page_preview=True)
