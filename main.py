@@ -297,7 +297,7 @@ def find_and_post_food(update, bot, query, sort):
         for x in resp['items']:
             print(str(x))
             update.message.reply_markdown(
-                '*' + x.get('item', "") + '*' + '    ' + '*' + str(x.get('item_price'), "") + '*'+ ' ₽' + '\n' +
+                '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price'), "") + '*'+ ' ₽' + '\n' +
                 '_' + x.get('ingrs', "") + '_' + ' \n' +
                 '*' + x.get('rest_name', "") + '*' + '\n' +
                 "["+x.get('rest_addr', "") +"]"+"(https://maps.google.com/?q="+x.get('rest_addr', "")+")" +'\n' +
