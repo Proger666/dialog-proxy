@@ -301,7 +301,7 @@ def find_and_post_food(update, bot, query, sort):
                 '_' + x.get('ingrs', "") + '_' + ' \n' +
                 '*' + x.get('rest_name', "") + '*' + '\n' +
                 "["+x.get('rest_addr', "") +"]"+"(https://maps.google.com/?q="+x.get('rest_addr', "")+")" +'\n' +
-                "["+x.get('rest_phone', "") + "]" + "(tel:"+x.get('rest_phone', "")+")" + '\n' +
+                 +
                                         x.get('f4sqr_link', ""))
         send_result_options_buttons(update.message.chat_id, bot)
 
