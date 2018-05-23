@@ -295,17 +295,12 @@ def find_and_post_food(update, bot, query, sort):
             update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
             return
         for x in resp['items']:
-            print(str(x))
-            print(x['item_name'])
-            print(x.get('rest_phone', ""))
-
             update.message.reply_markdown(
                 '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*'+ ' ₽' + '\n' +
                 '_' + x.get('ingrs', "") + '_' + ' \n' +
                 '*' + x.get('rest_name', "") + '*' + '\n' +
                 "["+x.get('rest_addr', "") +"]"+"(https://maps.google.com/?q="+x.get('rest_addr', "")+")" +'\n' +
-                "["+x.get('rest_phone', "") + "]" + "(tel:"+x.get('rest_phone', "")+")" + '\n' +
-                                        x.get('f4sqr_link', ""))
+                x.get('f4sqr_link', ""), disable_web_page_preview=True)
         send_result_options_buttons(update.message.chat_id, bot)
 
 
