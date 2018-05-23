@@ -299,7 +299,7 @@ def find_and_post_food(update, bot, query, sort):
                 '*' + x['item'] + '*' + '    ' + '*' + str(x['cost']) + '*'+ ' ₽' + '\n' +
                 '_' + x['ingrs'] + '_' + ' \n' +
                 '*' + x['rest_name'] + '*' + '\n' +
-                x['rest_addr'])
+                "["+x['rest_addr'] +"]"+"(https://maps.google.com/?q=term)")
         send_result_options_buttons(update.message.chat_id, bot)
 
 
