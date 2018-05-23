@@ -299,7 +299,9 @@ def find_and_post_food(update, bot, query, sort):
                 '*' + x['item'] + '*' + '    ' + '*' + str(x['cost']) + '*'+ ' ₽' + '\n' +
                 '_' + x['ingrs'] + '_' + ' \n' +
                 '*' + x['rest_name'] + '*' + '\n' +
-                "["+x['rest_addr'] +"]"+"(https://maps.google.com/?q=term)")
+                "["+x['rest_addr'] +"]"+"(https://maps.google.com/?q="+x['rest_addr']+")" +'\n' +
+                "["+x['rest_phone'] + "]" + "(tel:"+x['rest_phone']+")" + '\n' +
+                x['f4sqr_link'])
         send_result_options_buttons(update.message.chat_id, bot)
 
 
