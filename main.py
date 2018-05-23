@@ -123,11 +123,13 @@ def ask_user_location(chat_id, bot, update):
                      reply_markup=reply_markup)
     pass
 
+
 ################# BUTTONS DEFINITION ###############
 MORE_BUTT = "ЕЩЕ! 👉"
 MOST_CHEAP_BUTT = "Самые дешевые 💰"
 MOST_LUX_BUTT = "Самые дорогие 💎"
 AWESOMESS_BUTT = "Самые крутые 💖"
+
 
 def send_result_options_buttons(chat_id, bot):
     more_butt = telegram.KeyboardButton(text=MORE_BUTT)
@@ -216,14 +218,14 @@ def get_food_for_user_with_loc(bot, update, food, sort):
         logger.warning(
             "we failed to get data from menuet for food " + food + " chat_id:" + str(update.message.chat_id) + str(
                 r.content))
-        return {'status':'error', 'msg':'menuet down'}
+        return {'status': 'error', 'msg': 'menuet down'}
     elif r.status_code == 200:
         if len(r.content) == 0:
             return None
         else:
             # deprecated
             if r.content == b'no more':
-                return {'status':'ok','msg': 'no more'}
+                return {'status': 'ok', 'msg': 'no more'}
             else:
                 data_received = json.loads(r.content)
                 return data_received
@@ -296,11 +298,12 @@ def find_and_post_food(update, bot, query, sort):
             return
         for x in resp['items']:
             update.message.reply_markdown(
-                '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*'+ ' ₽' + '\n' +
-                '_' + x.get('ingrs', "") + '_' + ' \n' +
+                '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*' + ' ₽' + '\n' +
+                '_' + ",".join(x.get('ingrs', "")) + '_' + ' \n' +
                 '*' + x.get('rest_name', "") + '*' + '\n' +
-                "["+x.get('rest_addr', "") +"]"+"(https://maps.google.com/?q="+x.get('rest_addr', "")+")" +'\n' +
-                x.get('f4sqr_link', ""), disable_web_page_preview=True)
+                "[" + x.get('rest_addr', "") + "]" + "(https://maps.google.com/?q=" + x.get('rest_addr', "") + ")",
+                disable_web_page_preview=True)
+            update.message.reply_markdown('\n' + x.get('f4sqr_link', ""))
         send_result_options_buttons(update.message.chat_id, bot)
 
 
@@ -330,7 +333,6 @@ def echo(bot, update):
         set_to_memory_DB(update.message.from_user, 'last_action', '')
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
 
-
     if update.message.text == MORE_BUTT:
         find_again_with_sort(bot, update, 'more')
         return
@@ -344,19 +346,19 @@ def echo(bot, update):
         find_again_with_sort(bot, update, 'cheap')
         return
 
-
     #### PARSE QUESTION #######
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     # From dialog flow get action
     action = response['result']['action']
 
     #### IS IT WELCOME REQUEST ?
-    if get_from_memory_DB(update.message.from_user,USER.LAST_D_ACTION) == 'input.welcome':
+    if get_from_memory_DB(update.message.from_user, USER.LAST_D_ACTION) == 'input.welcome':
         # since we parsed question - remove last msg
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
 
     ##### IS IT A LOOP ? ######
-    if action == 'input.welcome' and get_from_memory_DB(update.message.from_user, USER.LAST_D_ACTION) == 'input.welcome':
+    if action == 'input.welcome' and get_from_memory_DB(update.message.from_user,
+                                                        USER.LAST_D_ACTION) == 'input.welcome':
         action = 'input.loop'
         update.message.reply_text('Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !')
         # clean last D action because we used it
@@ -376,10 +378,10 @@ def echo(bot, update):
             return
     elif action == 'get-food':
         update.message.reply_text(response['result']['fulfillment']['speech'])
-        find_and_post_food(update,bot, response['result']['parameters']['food'], None)
+        find_and_post_food(update, bot, response['result']['parameters']['food'], None)
         set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
     else:
-         update.message.reply_text(response['result']['fulfillment']['speech'])
+        update.message.reply_text(response['result']['fulfillment']['speech'])
     # detect_intent_texts(
     #     PROJECT_ID, session, text, lang_code)
 
