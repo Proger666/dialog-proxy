@@ -295,6 +295,7 @@ def find_and_post_food(update, bot, query, sort):
             update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
             return
         for x in resp['items']:
+            print(str(x))
             update.message.reply_markdown(
                 '*' + x.get('item', "") + '*' + '    ' + '*' + str(x.get('cost'), "") + '*'+ ' ₽' + '\n' +
                 '_' + x.get('ingrs', "") + '_' + ' \n' +
