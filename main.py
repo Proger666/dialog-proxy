@@ -306,7 +306,7 @@ def find_and_post_food(update, bot, query, sort):
                 disable_web_page_preview=True)
             update.message.reply_markdown('\n' + x.get('f4sqr_link', ""), disable_web_page_preview=False)
         send_result_options_buttons(update.message.chat_id, bot)
-except:
+ except:
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ?")
 
 def echo(bot, update):
