@@ -138,7 +138,6 @@ def send_result_options_buttons(chat_id, bot):
     most_cool = telegram.KeyboardButton(text=AWESOMESS_BUTT)
     custom_keyboard = [[more_butt], [most_cheap, most_cool, most_expensive]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
-    bot.send_message(chat_id=chat_id, text="и есть еще...", reply_markup=reply_markup)
     pass
 
 
@@ -310,8 +309,8 @@ def find_and_post_food(update, bot, query, sort):
                 disable_web_page_preview=True)
             update.message.reply_markdown('\n' + x.get('f4sqr_link', ""), disable_web_page_preview=False)
         send_result_options_buttons(update.message.chat_id, bot)
- except:
-        update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ?")
+ except Exception as e:
+        update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
 
 def echo(bot, update):
     """Echo the user message."""
