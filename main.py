@@ -311,7 +311,7 @@ def find_and_post_food(update, bot, query, sort):
             update.message.reply_markdown('\n' + x.get('f4sqr_link', ""), disable_web_page_preview=False)
         send_result_options_buttons(update.message.chat_id, bot)
  except Exception as e:
-        update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
+        update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e) + "\n" + str(x))
 
 def echo(bot, update):
     """Echo the user message."""
