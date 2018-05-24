@@ -138,6 +138,7 @@ def send_result_options_buttons(chat_id, bot):
     most_cool = telegram.KeyboardButton(text=AWESOMESS_BUTT)
     custom_keyboard = [[more_butt], [most_cheap, most_cool, most_expensive]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
+    bot.send_message(chat_id=chat_id, text="а еще есть кнопочки...", reply_markup=reply_markup)
     pass
 
 
