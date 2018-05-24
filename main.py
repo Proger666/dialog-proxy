@@ -272,9 +272,11 @@ def find_and_post_food(update, bot, query, sort):
     resp = get_food_for_user_with_loc(bot, update, query, sort)
     if resp is None:  # not resp:
         reply_nothing_found(update, bot)
+        return
     elif len(resp) == 0:
         reply_nothing_found(update, bot)
         # ALWAYS USE FUCKING GET!!!! not direct point to list name!!
+        return
 
     elif resp.get('status') == 'error':
         reply_nothing_found(update, bot)
