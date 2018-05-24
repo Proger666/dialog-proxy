@@ -271,6 +271,7 @@ def find_and_post_food(update, bot, query, sort):
         set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
         return
     resp = get_food_for_user_with_loc(bot, update, query, sort)
+    print(resp)
     if resp is None:  # not resp:
         reply_nothing_found(update, bot)
         return
