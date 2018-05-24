@@ -303,7 +303,7 @@ def find_and_post_food(update, bot, query, sort):
             update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
             return
         for x in resp['items']:
-            print(x)
+            print("we got resp from menuet"+x)
             update.message.reply_markdown(
                 '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*' + ' ₽' + '\n' +
                 '_' + ",".join(x.get('item_ingrs', "")) + '_' + ' \n' +
