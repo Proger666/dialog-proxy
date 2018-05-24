@@ -308,7 +308,8 @@ def find_and_post_food(update, bot, query, sort):
                 '*' + x.get('rest_name', "") + '*' + '\n' +
                 "[" + x.get('rest_addr', "") + "]" + "(https://maps.google.com/?q=" + x.get('rest_addr', "") + ")",
                 disable_web_page_preview=True)
-            update.message.reply_markdown('\n' + x.get('f4sqr_link', ""), disable_web_page_preview=False)
+            update.message.reply_markdown('\n' + x.get('f4sqr_link', "") , disable_web_page_preview=False)
+            update.message.reply_text(str(x))
         send_result_options_buttons(update.message.chat_id, bot)
  except Exception as e:
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e) + "\n" + str(x))
