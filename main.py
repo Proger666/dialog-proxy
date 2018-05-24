@@ -356,8 +356,16 @@ def echo(bot, update):
     #### PARSE QUESTION #######
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     # From dialog flow get action
-    action = response['result']['action']
-
+    action = None
+    try:
+        action = response.get['result']['action']
+    except:
+        logger.error("Failed to get response from dialogflow, will try again")
+        response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
+    try:
+        action = response.get['result']['action']
+    except:
+        logger.error("We failed to get response second time " + str(response))
     #### IS IT WELCOME REQUEST ?
     if get_from_memory_DB(update.message.from_user, USER.LAST_D_ACTION) == 'input.welcome':
         # since we parsed question - remove last msg
