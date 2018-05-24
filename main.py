@@ -356,6 +356,7 @@ def echo(bot, update):
     #### PARSE QUESTION #######
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     # From dialog flow get action
+    print(str(response))
     action = None
     try:
         action = response['result']['action']
