@@ -279,8 +279,10 @@ def find_and_post_food(update, bot, query, sort):
         return
 
     elif resp.get('status') == 'error':
-        reply_nothing_found(update, bot)
-        logger.error('MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user.id, 'last_msg')))
+        logger.error('MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user.id, 'last_msg'))+
+                     str(resp))
+        update.message.reply_text("мэнуетт предатель, к оружию!" + str(resp))
+        return
 
     else:
         # TODO: add response
