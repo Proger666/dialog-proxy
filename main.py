@@ -105,7 +105,8 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
 def start(bot, update):
     """Send a message when the command /start is issued."""
     session = get_user_session(update.message.from_user)
-    parse_query(bot, update.message.chat_id, session, update, 'шалом')
+    resp = parse_query(bot, update.message.chat_id, session, update, 'шалом')
+    print(resp)
     ask_user_location(update.message.chat_id, bot, update)
 
 
