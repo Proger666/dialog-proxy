@@ -358,12 +358,12 @@ def echo(bot, update):
     # From dialog flow get action
     action = None
     try:
-        action = response.get['result']['action']
+        action = response['result']['action']
     except Exception as e:
         logger.error("Failed to get response from dialogflow, will try again " + str(e))
         response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     try:
-        action = response.get['result']['action']
+        action = response['result']['action']
     except Exception as e:
         logger.error("We failed to get response second time " + str(response) + " error was " + str(e))
     #### IS IT WELCOME REQUEST ?
