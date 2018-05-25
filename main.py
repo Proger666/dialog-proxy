@@ -304,12 +304,11 @@ def find_and_post_food(update, bot, query, sort):
             return
         for x in resp['items']:
             print("we got resp from menuet"+str(x))
-            update.message.reply_markdown(
-                '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*' + ' ₽' + '\n' +
-                '_' + ",".join(x.get('item_ingrs', "")) + '_' + ' \n' +
-                '*' + x.get('rest_name', "") + '*' + '\n' +
-                "[" + x.get('rest_addr', "") + "]" + "(https://maps.google.com/?q=" + x.get('rest_addr', "") + ")",
-                disable_web_page_preview=True)
+            mesg = '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*' + ' ₽' + '\n' + \
+                '_' + ",".join(x.get('item_ingrs', "")) + '_' + ' \n' + \
+                '*' + x.get('rest_name', "") + '*' + '\n' + \
+                "[" + x.get('rest_addr', "") + "]" + "(https://maps.google.com/?q=" + x.get('rest_addr', "") + ")"
+            update.message.reply_markdown(msg,disable_web_page_preview=True)
             update.message.reply_markdown('\n' + x.get('f4sqr_link', "") , disable_web_page_preview=False)
         send_result_options_buttons(update.message.chat_id, bot)
  except Exception as e:
