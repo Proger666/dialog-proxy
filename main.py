@@ -23,7 +23,6 @@ class USER:
 
 # [START import_libraries]
 import uuid
-import dialogflow
 import datetime
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
@@ -117,7 +116,7 @@ def help(bot, update):
 
 def ask_user_location(chat_id, bot, update):
     get_user_session(update.message.from_user)
-    location_keyboard = telegram.KeyboardButton(text="📌 Я здесь!", request_location=True, )
+    location_keyboard = telegram.KeyboardButton(text="📌 Я здесь!", request_location=True)
     custom_keyboard = [[location_keyboard]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, one_time_keyboard=True, resize_keyboard=True)
     bot.send_message(chat_id=chat_id, text="Тыкни на кнопочку, пожалуйста",
@@ -228,7 +227,7 @@ def get_food_for_user_with_loc(bot, update, food, sort):
             if r.content == b'no more':
                 return {'status': 'ok', 'msg': 'no more'}
             else:
-                data_received = json.loads(r.content)
+                data_received = json.loads(r.content.decode('utf-8'))
                 return data_received
 
     elif r.status_code == 500:
@@ -264,56 +263,61 @@ def reply_nothing_found(update, bot):
 
 
 def find_and_post_food(update, bot, query, sort):
- try:# do we know where user is ?
-    location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
-    if location is None:
-        ask_user_location(update.message.chat_id, bot, update)
-        set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
-        return
-    resp = get_food_for_user_with_loc(bot, update, query, sort)
-    print(resp)
-    if resp is None:  # not resp:
-        reply_nothing_found(update, bot)
-        return
-    elif len(resp) == 0:
-        reply_nothing_found(update, bot)
-        # ALWAYS USE FUCKING GET!!!! not direct point to list name!!
-        return
-
-    elif resp.get('status') == 'error':
-        logger.error('MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user.id, 'last_msg'))+
-                     str(resp))
-        update.message.reply_text("мэнуетт предатель, к оружию!" + str(resp))
-        return
-
-    else:
-        # TODO: add response
-        # expected structure
-        # { item: <>
-        # ingrs: []
-        # cost: <>
-        # place: link to addr
-        #
-        if len(resp) == 0:
+    try:  # do we know where user is ?
+        location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
+        if location is None:
+            ask_user_location(update.message.chat_id, bot, update)
+            set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
+            return
+        resp = get_food_for_user_with_loc(bot, update, query, sort)
+        print(resp)
+        if resp is None:  # not resp:
             reply_nothing_found(update, bot)
-        elif resp['msg'] == 'no more':
-            update.message.reply_text('Больше ничего не нашли :(')
             return
-        elif resp['msg'] == 500:
-            update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
+        elif len(resp) == 0:
+            reply_nothing_found(update, bot)
+            # ALWAYS USE FUCKING GET!!!! not direct point to list name!!
             return
-        for x in resp['items']:
-            print("we got resp from menuet"+str(x))
-            mesg = '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(x.get('item_price', "")) + '*' + ' ₽' + '\n' + \
-                '_' + ",".join(x.get('item_ingrs', "")) + '_' + ' \n' + \
-                '*' + x.get('rest_name', "") + '*' + '\n' + \
-                "[" + x.get('rest_addr', "") + "]" + "(https://maps.google.com/?q=" + x.get('rest_addr', "") + ")"
-            print(" what we formed so far " + mesg)
-            update.message.reply_markdown(mesg,disable_web_page_preview=True)
-            update.message.reply_markdown('\n' + x.get('f4sqr_link', "") , disable_web_page_preview=False)
-        send_result_options_buttons(update.message.chat_id, bot)
- except Exception as e:
+
+        elif resp.get('status') == 'error':
+            logger.error(
+                'MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user.id, 'last_msg')) +
+                str(resp))
+            update.message.reply_text("мэнуетт предатель, к оружию!" + str(resp))
+            return
+
+        else:
+            # TODO: add response
+            # expected structure
+            # { item: <>
+            # ingrs: []
+            # cost: <>
+            # place: link to addr
+            #
+            if len(resp) == 0:
+                reply_nothing_found(update, bot)
+            elif resp['msg'] == 'no more':
+                update.message.reply_text('Больше ничего не нашли :(')
+                return
+            elif resp['msg'] == 500:
+                update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
+                return
+            for x in resp['items']:
+                print("we got resp from menuet" + str(x))
+                mesg = '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(
+                    x.get('item_price', "")) + '*' + ' ₽' + '\n' + \
+                       '_' + ",".join(x.get('item_ingrs', "")) + '_'
+                print(" what we formed so far " + mesg)
+                update.message.reply_markdown(mesg)
+                bot.send_venue(chat_id=update.message.chat_id, longitude="37.71456500043604",
+                               latitude="55.87900153130337", title=x.get('rest_name', " "),
+                               address=x.get('rest_addr', " "),
+                               foursquare_id="5852d5d10a3d540a0d7aa7a5")
+
+            send_result_options_buttons(update.message.chat_id, bot)
+    except Exception as e:
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e) + "\n" + str(x))
+
 
 def echo(bot, update):
     """Echo the user message."""
@@ -420,7 +424,7 @@ def parse_query(bot, chat_id, session, update, msg):
     print(request.query)
     bot.send_chat_action(chat_id=chat_id, action=telegram.ChatAction.TYPING)
     response = request.getresponse()
-    response = json.loads(response.read())
+    response = json.loads(response.read().decode('utf-8'))
     return response
 
 
