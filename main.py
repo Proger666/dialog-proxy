@@ -411,6 +411,7 @@ def find_again_with_sort(bot, update, sort):
     action = 'get-food'
     last_query = get_from_memory_DB(update.message.from_user, 'last_query')
     find_and_post_food(update, bot, last_query, sort)
+    logger.info("we repeating query " + last_query)
     #### REMEMBER OUR QUERY ####
     set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
 
