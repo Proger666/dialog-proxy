@@ -54,9 +54,10 @@ MENUET_TOKEN = "ya29.c.El97BacMtcOVmFuQGwApUY-EikgCG8YtGI2C6oAt73Gd9AsHFBntwabQE
 # twabQElx-9ZIQJSRvIBprUaRqDvHo2JHZCOTW8Z80u2FH8k9XlsL1Lqeg"
 PROJECT_ID = "menuet-bf2b5"
 ###################DEFAULT PARAMETERS ###############
-DEFAULT_LONG = "55.751571"
-DEFAULT_LAT = "37.627049"
-DEFAULT_NODATA = "ХЗ"
+DEFAULT_LAT = "55.751571"
+DEFAULT_LONG = "37.627049"
+DEFAULT_NODATA = " "
+DEFAULT_ADDR = " "
 
 ########################
 MEMORY_DB = {'users_context': []}
@@ -266,6 +267,27 @@ def reply_nothing_found(update, bot):
     update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
 
 
+def getDataWithDefault(list, key):
+    value = list.get(key, "")
+    if isinstance(value, str):
+        if value == "" or len(value) == 0:
+            if key == 'rest_addr':
+                return DEFAULT_ADDR
+            elif key == 'rest_name':
+                return 'No Data'
+            elif key == 'rest_long':
+                return DEFAULT_LONG
+            elif key == 'rest_lat':
+                return DEFAULT_LAT
+            elif key == 'foursquare_id':
+                # TODO:redesign
+                return ""
+        else:
+            return value
+    else:
+        return DEFAULT_NODATA
+
+
 def find_and_post_food(update, bot, query, sort):
     try:  # do we know where user is ?
         location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
@@ -313,10 +335,10 @@ def find_and_post_food(update, bot, query, sort):
                        '_' + ",".join(x.get('item_ingrs', "")) + '_'
                 print(" what we formed so far " + mesg)
                 update.message.reply_markdown(mesg)
-                bot.send_venue(chat_id=update.message.chat_id, longitude=DEFAULT_LONG,
-                               latitude=DEFAULT_LAT, title=x.get('rest_name', DEFAULT_NODATA),
-                               address=x.get('rest_addr', DEFAULT_NODATA),
-                               foursquare_id=x.get('foursquare_id', DEFAULT_NODATA))
+                bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
+                               latitude=getDataWithDefault(x, 'rest_lat'), title=getDataWithDefault(x, 'rest_name'),
+                               address=getDataWithDefault(x, 'rest_addr'),
+                               foursquare_id=getDataWithDefault(x, 'foursquare_id'))
 
             send_result_options_buttons(update.message.chat_id, bot)
     except Exception as e:
