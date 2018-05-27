@@ -53,6 +53,10 @@ MENUET_TOKEN = "ya29.c.El97BacMtcOVmFuQGwApUY-EikgCG8YtGI2C6oAt73Gd9AsHFBntwabQE
 # CLIENT_ACCESS_TOKEN = "ya29.c.El97BacMtcOVmFuQGwApUY-EikgCG8YtGI2C6oAt73Gd9AsHFBn \
 # twabQElx-9ZIQJSRvIBprUaRqDvHo2JHZCOTW8Z80u2FH8k9XlsL1Lqeg"
 PROJECT_ID = "menuet-bf2b5"
+###################DEFAULT PARAMETERS ###############
+DEFAULT_LONG = "55.751571"
+DEFAULT_LAT = "37.627049"
+DEFAULT_NODATA = "ХЗ"
 
 ########################
 MEMORY_DB = {'users_context': []}
@@ -309,10 +313,10 @@ def find_and_post_food(update, bot, query, sort):
                        '_' + ",".join(x.get('item_ingrs', "")) + '_'
                 print(" what we formed so far " + mesg)
                 update.message.reply_markdown(mesg)
-                bot.send_venue(chat_id=update.message.chat_id, longitude="37.71456500043604",
-                               latitude="55.87900153130337", title=x.get('rest_name', " "),
-                               address=x.get('rest_addr', " "),
-                               foursquare_id="5852d5d10a3d540a0d7aa7a5")
+                bot.send_venue(chat_id=update.message.chat_id, longitude=DEFAULT_LONG,
+                               latitude=DEFAULT_LAT, title=x.get('rest_name', DEFAULT_NODATA),
+                               address=x.get('rest_addr', DEFAULT_NODATA),
+                               foursquare_id=x.get('foursquare_id', DEFAULT_NODATA))
 
             send_result_options_buttons(update.message.chat_id, bot)
     except Exception as e:
@@ -320,7 +324,7 @@ def find_and_post_food(update, bot, query, sort):
 
 
 def echo(bot, update):
-    """Echo the user message."""
+    """parse query and return response to the user"""
     text = update.message.text
     print('Current memory DB ' + str(MEMORY_DB))
 
