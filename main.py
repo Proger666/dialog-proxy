@@ -269,6 +269,7 @@ def reply_nothing_found(update, bot):
 
 def getDataWithDefault(list, key):
     value = list.get(key, "")
+    value = "" if value is None else value
     if isinstance(value, str):
         if value == "" or len(value) == 0:
             if key == 'rest_addr':
