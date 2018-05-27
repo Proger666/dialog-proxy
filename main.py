@@ -309,7 +309,7 @@ def find_and_post_food(update, bot, query, sort):
             for x in resp['items']:
                 print("we got resp from menuet" + str(x))
                 mesg = '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(
-                    x.get('item_price', "")) + '*' + ' ₽' + '\n' + \
+                    x.get('item_price', "")) + '*' + '₽' + '\n' + \
                        '_' + ",".join(x.get('item_ingrs', "")) + '_'
                 print(" what we formed so far " + mesg)
                 update.message.reply_markdown(mesg)
