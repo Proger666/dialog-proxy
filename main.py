@@ -320,6 +320,11 @@ def find_and_post_food(update, bot, query, sort):
 
 
 def echo(bot, update):
+  with concurrent.futures.ProcessPoolExecutor() as executor:
+    executor.map(process_request(bot, update))
+  return True
+
+def process_request(bot, update):
     """parse query and return response to the user"""
     # Get users query
     query = update.message.text
@@ -503,7 +508,6 @@ def main():
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(MessageHandler(Filters.location, location))
     # on noncommand i.e message - echo the message on Telegram
-    
     dp.add_handler(MessageHandler(Filters.all, echo))
 
     # log all errors
