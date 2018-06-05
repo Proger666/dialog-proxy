@@ -7,6 +7,7 @@ import random
 
 import os
 import telegram
+import concurrent.futures
 from future.standard_library import install_aliases
 
 install_aliases()
@@ -17,6 +18,7 @@ CLIENT_ACCESS_TOKEN = '114a4b10c66c46dca27ad6f63cdc2ced'
 
 
 class USER:
+    QUERY_STATUS = 'query_succ'
     LOCATION = 'last_location'
     LAST_D_ACTION = 'last_dialog_action'
 
@@ -72,37 +74,6 @@ MEMORY_DB = {'users_context': []}
 
 ########################
 
-# [START dialogflow_detect_intent_text]
-
-def detect_intent_texts(project_id, session_id, texts, language_code):
-    """Returns the result of detect intent with texts as inputs.
-
-    Using the same `session_id` between requests allows continuation
-    of the conversaion."""
-    session_client = dialogflow.SessionsClient()
-
-    session = session_client.session_path(project_id, session_id)
-    print('Session path: {}\n'.format(session))
-
-    for text in texts:
-        text_input = dialogflow.types.TextInput(
-            text=text, language_code=language_code)
-
-        query_input = dialogflow.types.QueryInput(text=text_input)
-
-        response = session_client.detect_intent(
-            session=session, query_input=query_input)
-
-        print('=' * 20)
-        print('Query text: {}'.format(response.query_result.query_text))
-        print('Detected intent: {} (confidence: {})\n'.format(
-            response.query_result.intent.display_name,
-            response.query_result.intent_detection_confidence))
-        print('Fulfillment text: {}\n'.format(
-            response.query_result.fulfillment_text))
-
-
-# [END dialogflow_detect_intent_text]
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
@@ -111,6 +82,8 @@ def start(bot, update):
     session = get_user_session(update.message.from_user)
     resp = parse_query(bot, update.message.chat_id, session, update, 'шалом')
     print(resp)
+    #send response from dialog flow
+    update.message.reply_text(resp['result']['fulfillment']['speech'])
     ask_user_location(update.message.chat_id, bot, update)
 
 
@@ -348,18 +321,21 @@ def find_and_post_food(update, bot, query, sort):
 
 def echo(bot, update):
     """parse query and return response to the user"""
-    text = update.message.text
+    # Get users query
+    query = update.message.text
     print('Current memory DB ' + str(MEMORY_DB))
 
     chat_id = update.message.chat_id
-    logger.warning(text)
+    logger.warning("User said to us: " + str(query))
     # First check if we have a session
-    # Dont care about question
+    # Dont care about question ATM
     session = check_user_context(update.message.from_user)
+
     # create new session if not exist
     if session is None:
         session = get_user_session(update.message.from_user)
         set_to_memory_DB(user=update.message.from_user, key='last_msg', value=update.message.text)
+        set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
 
     # do we have msg from user or its a new request ?
     last_msg = update.message.text if update.message.text is not None else get_from_memory_DB(update.message.from_user,
@@ -367,10 +343,14 @@ def echo(bot, update):
     last_action = get_from_memory_DB(update.message.from_user, 'last_action')
 
     # If its new request -no last msg - ask what he wants ? Or parse existing msg
-    if (last_msg == '' or last_msg is None) and last_action == 'location' and update.message.text == '':
+    if (last_msg == '' or last_msg is None or update.message.text is None) and last_action == 'location':
         update.message.reply_text('Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !')
         set_to_memory_DB(update.message.from_user, 'last_action', '')
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
+
+        # query ended
+        set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
+        return
 
     if update.message.text == MORE_BUTT:
         find_again_with_sort(bot, update, 'more')
@@ -386,6 +366,18 @@ def echo(bot, update):
         return
 
     #### PARSE QUESTION #######
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+
+        # do we already have a question ?
+     if get_from_memory_DB(update.message.from_user, USER.QUERY_STATUS) == True:
+        # lets set query status to false = we are working on it
+        set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
+        executor.map(parse_response(bot, chat_id, last_msg, session, query, update))
+     else:
+          update.message.reply_text("Погоди, погоди, погоди щас все будет!")
+
+
+def parse_response(bot, chat_id, last_msg, session, text, update):
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     # From dialog flow get action
     print(str(response))
@@ -403,7 +395,6 @@ def echo(bot, update):
     if get_from_memory_DB(update.message.from_user, USER.LAST_D_ACTION) == 'input.welcome':
         # since we parsed question - remove last msg
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
-
     ##### IS IT A LOOP ? ######
     if action == 'input.welcome' and get_from_memory_DB(update.message.from_user,
                                                         USER.LAST_D_ACTION) == 'input.welcome':
@@ -413,6 +404,8 @@ def echo(bot, update):
         set_to_memory_DB(update.message.from_user, USER.LAST_D_ACTION, 'None')
         set_to_memory_DB(update.message.from_user, 'last_action', 'None')
 
+        # query ended
+        set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
         return
     if action == 'input.welcome':
         update.message.reply_text(response['result']['fulfillment']['speech'])
@@ -423,22 +416,26 @@ def echo(bot, update):
         if location is None:
             ask_user_location(chat_id, bot, update)
             set_to_memory_DB(update.message.from_user, 'last_msg', text)
+
+            # query ended
+            set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
             return
     elif action == 'get-food':
-        update.message.reply_text(response['result']['fulfillment']['speech'])
         find_and_post_food(update, bot, response['result']['parameters']['food'], None)
         set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
     else:
         update.message.reply_text(response['result']['fulfillment']['speech'])
     # detect_intent_texts(
     #     PROJECT_ID, session, text, lang_code)
+    # query ended
+    set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
+    return True
 
 
 def find_again_with_sort(bot, update, sort):
-    action = 'get-food'
     last_query = get_from_memory_DB(update.message.from_user, 'last_query')
     find_and_post_food(update, bot, last_query, sort)
-    logger.info("we repeating query " + last_query)
+    logger.info("we repeating query " + str(last_query))
     #### REMEMBER OUR QUERY ####
     set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
 
@@ -453,6 +450,7 @@ def parse_query(bot, chat_id, session, update, msg):
     bot.send_chat_action(chat_id=chat_id, action=telegram.ChatAction.TYPING)
     response = request.getresponse()
     response = json.loads(response.read().decode('utf-8'))
+    set_to_memory_DB(update.message.from_user,USER.LAST_D_ACTION,response["result"]["action"])
     return response
 
 
@@ -490,6 +488,7 @@ def location(bot, update):
         logger.error("Failed to save data to menuet")
     set_to_memory_DB(update.message.from_user, 'last_action', 'location')
 
+    set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
     echo(bot, update)
     return BIO
 
@@ -504,7 +503,7 @@ def main():
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(MessageHandler(Filters.location, location))
     # on noncommand i.e message - echo the message on Telegram
-
+    
     dp.add_handler(MessageHandler(Filters.all, echo))
 
     # log all errors
@@ -526,4 +525,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except:
+        logger.error("We got error in Main")
