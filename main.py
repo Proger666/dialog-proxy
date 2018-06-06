@@ -82,7 +82,7 @@ def start(bot, update):
     session = get_user_session(update.message.from_user)
     resp = parse_query(bot, update.message.chat_id, session, update, 'шалом')
     print(resp)
-    #send response from dialog flow
+    # send response from dialog flow
     update.message.reply_text(resp['result']['fulfillment']['speech'])
     ask_user_location(update.message.chat_id, bot, update)
 
@@ -97,7 +97,8 @@ def ask_user_location(chat_id, bot, update):
     location_keyboard = telegram.KeyboardButton(text="📌 Я здесь!", request_location=True)
     custom_keyboard = [[location_keyboard]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, one_time_keyboard=True, resize_keyboard=True)
-    bot.send_message(chat_id=chat_id, text="Тыкни на кнопочку, пожалуйста",
+    bot.send_message(chat_id=chat_id, text="Мы не знаем где :("
+                                           " Тыкни на кнопочку, пожалуйста",
                      reply_markup=reply_markup)
     pass
 
@@ -320,9 +321,10 @@ def find_and_post_food(update, bot, query, sort):
 
 
 def echo(bot, update):
-  with concurrent.futures.ProcessPoolExecutor() as executor:
-    executor.map(process_request(bot, update))
-  return True
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        executor.map(process_request(bot, update))
+    return True
+
 
 def process_request(bot, update):
     """parse query and return response to the user"""
@@ -374,12 +376,12 @@ def process_request(bot, update):
     with concurrent.futures.ProcessPoolExecutor() as executor:
 
         # do we already have a question ?
-     if get_from_memory_DB(update.message.from_user, USER.QUERY_STATUS) == True:
-        # lets set query status to false = we are working on it
-        set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
-        executor.map(parse_response(bot, chat_id, last_msg, session, query, update))
-     else:
-          update.message.reply_text("Погоди, погоди, погоди щас все будет!")
+        if get_from_memory_DB(update.message.from_user, USER.QUERY_STATUS) == True:
+            # lets set query status to false = we are working on it
+            set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
+            executor.map(parse_response(bot, chat_id, last_msg, session, query, update))
+        else:
+            update.message.reply_text("Погоди, погоди, погоди щас все будет!")
 
 
 def parse_response(bot, chat_id, last_msg, session, text, update):
@@ -455,7 +457,7 @@ def parse_query(bot, chat_id, session, update, msg):
     bot.send_chat_action(chat_id=chat_id, action=telegram.ChatAction.TYPING)
     response = request.getresponse()
     response = json.loads(response.read().decode('utf-8'))
-    set_to_memory_DB(update.message.from_user,USER.LAST_D_ACTION,response["result"]["action"])
+    set_to_memory_DB(update.message.from_user, USER.LAST_D_ACTION, response["result"]["action"])
     return response
 
 
