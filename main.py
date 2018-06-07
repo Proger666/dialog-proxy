@@ -97,7 +97,7 @@ def ask_user_location(chat_id, bot, update):
     location_keyboard = telegram.KeyboardButton(text="📌 Я здесь!", request_location=True)
     custom_keyboard = [[location_keyboard]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, one_time_keyboard=True, resize_keyboard=True)
-    bot.send_message(chat_id=chat_id, text="Мы не знаем где :("
+    bot.send_message(chat_id=chat_id, text="Мы не знаем где ты :("
                                            " Тыкни на кнопочку, пожалуйста",
                      reply_markup=reply_markup)
     pass
