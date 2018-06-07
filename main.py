@@ -270,6 +270,9 @@ def find_and_post_food(update, bot, query, sort):
             ask_user_location(update.message.chat_id, bot, update)
             set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
             return
+        if query is None or len(query) == 0:
+            update.message.reply_text("Чет мы не поняли твоего вопроса, скажи по-другому ?")
+            return
         resp = get_food_for_user_with_loc(bot, update, query, sort)
         print(resp)
         if resp is None:  # not resp:
@@ -307,7 +310,7 @@ def find_and_post_food(update, bot, query, sort):
                 print("we got resp from menuet" + str(x))
                 mesg = '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(
                     x.get('item_price', "")) + '*' + '₽' + '\n' + \
-                       '_' + ",".join(x.get('item_ingrs', "")) + '_'
+                       '_' + ",".join([y for y in x["item_ingrs"]['name']]  )+ '_'
                 print(" what we formed so far " + mesg)
                 update.message.reply_markdown(mesg)
                 bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
@@ -317,7 +320,7 @@ def find_and_post_food(update, bot, query, sort):
 
             send_result_options_buttons(update.message.chat_id, bot)
     except Exception as e:
-        update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e) + "\n" + str(x))
+        update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
 
 
 def echo(bot, update):
