@@ -2,6 +2,8 @@
 # !/usr/bin/env python
 from __future__ import print_function
 
+from telegram.ext.dispatcher import run_async
+
 import json
 import random
 
@@ -21,6 +23,7 @@ class USER:
     QUERY_STATUS = 'query_succ'
     LOCATION = 'last_location'
     LAST_D_ACTION = 'last_dialog_action'
+    LAST_MSG = 'last_msg'
 
 
 # [START import_libraries]
@@ -186,7 +189,7 @@ def get_food_for_user_with_loc(bot, update, food, sort):
 
     payload = {'action': 'get_food_loc', 'token': MENUET_TOKEN,
                'user_id': update.message.from_user.id,
-               'query': food,
+               'query': "".join(food),
                "loc_lng": user_location['longitude'],
                "loc_lat": user_location['latitude'],
                "sort": sort}
@@ -239,6 +242,7 @@ def get_from_memory_DB(user, key):
 
 def reply_nothing_found(update, bot):
     update.message.reply_text('Сорян, чет ничего найти не могу :( Может выберем что-то другое ?')
+    set_to_memory_DB(update.message.from_user, USER.LAST_MSG, "")
 
 
 def getDataWithDefault(list, key):
@@ -304,6 +308,7 @@ def find_and_post_food(update, bot, query, sort):
                 update.message.reply_text('Больше ничего не нашли :(')
                 return
             elif resp['msg'] == 500:
+                reply_nothing_found(update,bot)
                 update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
                 return
             for x in resp['items']:
@@ -320,15 +325,13 @@ def find_and_post_food(update, bot, query, sort):
 
             send_result_options_buttons(update.message.chat_id, bot)
     except Exception as e:
+        logger.error("We failed to response!!!! %s", str(e))
+        reply_nothing_found(update,bot)
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
 
 
-def echo(bot, update):
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        executor.map(process_request(bot, update))
-    return True
 
-
+@run_async
 def process_request(bot, update):
     """parse query and return response to the user"""
     # Get users query
@@ -353,7 +356,7 @@ def process_request(bot, update):
     last_action = get_from_memory_DB(update.message.from_user, 'last_action')
 
     # If its new request -no last msg - ask what he wants ? Or parse existing msg
-    if (last_msg == '' or last_msg is None or update.message.text is None) and last_action == 'location':
+    if (last_msg == '' or last_msg is None) and last_action == 'location':
         update.message.reply_text('Что бы ты хотел съесть ? Например, Ларису ивановну хо... салат с кунжутом хочу !')
         set_to_memory_DB(update.message.from_user, 'last_action', '')
         set_to_memory_DB(update.message.from_user, 'last_msg', '')
@@ -363,10 +366,10 @@ def process_request(bot, update):
         return
 
     if update.message.text == MORE_BUTT:
-        find_again_with_sort(bot, update, 'more')
+        find_again_with_sort(bot, update, None)
         return
     elif update.message.text == AWESOMESS_BUTT:
-        find_again_with_sort(bot, update, 'awessome')
+        find_again_with_sort(bot, update, 'awesome')
         return
     elif update.message.text == MOST_LUX_BUTT:
         find_again_with_sort(bot, update, 'lux')
@@ -376,15 +379,12 @@ def process_request(bot, update):
         return
 
     #### PARSE QUESTION #######
-    with concurrent.futures.ProcessPoolExecutor() as executor:
 
         # do we already have a question ?
-        if get_from_memory_DB(update.message.from_user, USER.QUERY_STATUS) == True:
-            # lets set query status to false = we are working on it
-            set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
-            executor.map(parse_response(bot, chat_id, last_msg, session, query, update))
-        else:
-            update.message.reply_text("Погоди, погоди, погоди щас все будет!")
+    # lets set query status to false = we are working on it
+    set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
+    parse_response(bot, chat_id, last_msg, session, query, update)
+
 
 
 def parse_response(bot, chat_id, last_msg, session, text, update):
@@ -499,7 +499,7 @@ def location(bot, update):
     set_to_memory_DB(update.message.from_user, 'last_action', 'location')
 
     set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
-    echo(bot, update)
+    process_request(bot, update)
     return BIO
 
 
@@ -512,8 +512,8 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(MessageHandler(Filters.location, location))
-    # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.all, echo))
+    # on noncommand i.e message - parse request the message on Telegram
+    dp.add_handler(MessageHandler(Filters.all, process_request))
 
     # log all errors
     dp.add_error_handler(error)
