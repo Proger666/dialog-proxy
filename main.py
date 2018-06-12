@@ -502,7 +502,7 @@ def nothing_to_say(update,bot):
     return
 
 
-def HALP(update, bot):
+def HALP(bot,update):
     update.message.reply_markdown("Я могу подсказать где найти твою любимую еду! \nПросто отправь мне свое местоположение и запрос - я все найду для тебя!\nА если захочешь задонатить - [button]")
     return
 
@@ -516,8 +516,6 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('help', HALP))
-
-    dp.add_handler(CommandHandler('', nothing_to_say))
 
     dp.add_handler(MessageHandler(Filters.location, location))
     # on noncommand i.e message - parse request the message on Telegram
