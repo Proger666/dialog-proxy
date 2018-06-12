@@ -89,12 +89,6 @@ def start(bot, update):
     update.message.reply_text(resp['result']['fulfillment']['speech'])
     ask_user_location(update.message.chat_id, bot, update)
 
-
-def help(bot, update):
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
-
-
 def ask_user_location(chat_id, bot, update):
     get_user_session(update.message.from_user)
     location_keyboard = telegram.KeyboardButton(text="📌 Я здесь!", request_location=True)
@@ -508,6 +502,11 @@ def nothing_to_say(update,bot):
     return
 
 
+def HALP(update, bot):
+    update.message.reply_markdown("Я могу подсказать где найти твою любимую еду! \nПросто отправь мне свое местоположение и запрос - я все найду для тебя!\nА если захочешь задонатить - [button]")
+    return
+
+
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
@@ -516,6 +515,8 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CommandHandler('help', HALP))
+
     dp.add_handler(CommandHandler('', nothing_to_say))
 
     dp.add_handler(MessageHandler(Filters.location, location))
