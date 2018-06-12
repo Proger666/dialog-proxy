@@ -503,6 +503,11 @@ def location(bot, update):
     return BIO
 
 
+def nothing_to_say(update,bot):
+    update.message.reply_text("Мой разум...покой... Что хочешь смертный ?")
+    return
+
+
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
@@ -511,6 +516,8 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CommandHandler('', nothing_to_say))
+
     dp.add_handler(MessageHandler(Filters.location, location))
     # on noncommand i.e message - parse request the message on Telegram
     dp.add_handler(MessageHandler(Filters.all, process_request))
