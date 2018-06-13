@@ -2,15 +2,13 @@
 # !/usr/bin/env python
 from __future__ import print_function
 
-from telegram.ext.dispatcher import run_async
-
 import json
+import os
 import random
 
-import os
 import telegram
-import concurrent.futures
 from future.standard_library import install_aliases
+from telegram.ext.dispatcher import run_async
 
 install_aliases()
 
@@ -88,6 +86,7 @@ def start(bot, update):
     # send response from dialog flow
     update.message.reply_text(resp['result']['fulfillment']['speech'])
     ask_user_location(update.message.chat_id, bot, update)
+
 
 def ask_user_location(chat_id, bot, update):
     get_user_session(update.message.from_user)
@@ -302,14 +301,14 @@ def find_and_post_food(update, bot, query, sort):
                 update.message.reply_text('Больше ничего не нашли :(')
                 return
             elif resp['msg'] == 500:
-                reply_nothing_found(update,bot)
+                reply_nothing_found(update, bot)
                 update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
                 return
             for x in resp['items']:
                 print("we got resp from menuet" + str(x))
                 mesg = '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(
                     x.get('item_price', "")) + '*' + '₽' + '\n' + \
-                       '_' + ",".join([y for y in x["item_ingrs"]['name']]  )+ '_'
+                       '_' + ",".join([y for y in x["item_ingrs"]['name']]) + '_'
                 print(" what we formed so far " + mesg)
                 update.message.reply_markdown(mesg)
                 bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
@@ -320,9 +319,8 @@ def find_and_post_food(update, bot, query, sort):
             send_result_options_buttons(update.message.chat_id, bot)
     except Exception as e:
         logger.error("We failed to response!!!! %s", str(e))
-        reply_nothing_found(update,bot)
+        reply_nothing_found(update, bot)
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
-
 
 
 @run_async
@@ -374,11 +372,10 @@ def process_request(bot, update):
 
     #### PARSE QUESTION #######
 
-        # do we already have a question ?
+    # do we already have a question ?
     # lets set query status to false = we are working on it
     set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
     parse_response(bot, chat_id, last_msg, session, query, update)
-
 
 
 def parse_response(bot, chat_id, last_msg, session, text, update):
@@ -497,13 +494,16 @@ def location(bot, update):
     return BIO
 
 
-def nothing_to_say(update,bot):
+def nothing_to_say(update, bot):
     update.message.reply_text("Мой разум...покой... Что хочешь смертный ?")
     return
 
 
-def HALP(bot,update):
-    update.message.reply_markdown("Я могу подсказать где найти твою любимую еду! \nПросто отправь мне свое местоположение и запрос - я все найду для тебя!\nА если захочешь задонатить - [button]")
+def HALP(bot, update):
+    update.message.reply_markdown(
+        "Я могу подсказать где найти твою любимую еду!\n "
+        "\nПросто отправь мне свое местоположение и запрос - я все найду для тебя!"
+        "\nА если захочешь задонатить - [button]")
     return
 
 
