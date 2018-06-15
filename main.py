@@ -329,8 +329,24 @@ def find_and_post_food(update, bot, query, sort):
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
 
 
+def check_auth(id):
+    awesome_ones = []
+    if id not in awesome_ones:
+        return False
+    else:
+        return True
+
+
 @run_async
 def process_request(bot, update):
+    # secret zone
+    if update.message.text == 'Уебу':
+        logger.error("Someone entered secret line, user:%s", str(update.message.from_user))
+        update.message.reply_markdown("Анализирую....")
+        if check_auth(update.message.from_user.id):
+            logger.error("We gave all information to this user %s", str(update.message.from_user))
+        else:
+            update.message.reply_markdown("Go away infidel...*GO AWAAAYYY!!!*.\nAncients will rise again...")
     """parse query and return response to the user"""
     # Get users query
     query = update.message.text
