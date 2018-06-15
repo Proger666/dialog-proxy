@@ -306,9 +306,15 @@ def find_and_post_food(update, bot, query, sort):
                 return
             for x in resp['items']:
                 print("we got resp from menuet" + str(x))
-                mesg = '*' + x.get('item_name', "") + '*' + '    ' + '*' + str(
-                    x.get('item_price', "")) + '*' + '₽' + '\n' + \
-                       '_' + ",".join([y for y in x["item_ingrs"]['name']]) + '_'
+                item_name = x.get('item_name', "")
+                item_price = str(x.get('item_price', ""))
+                try:
+                    item_ingrs = ",".join([y for y in x["item_ingrs"]['name']])
+                except:
+                    logger.warning("We failed to parse ingrs, %s", x['item_ingrs'])
+                    item_ingrs = ""
+                mesg = '*' + item_name + '*' + '    ' + '*' + item_price + '*' + '₽' + '\n' + \
+                       '_' + item_ingrs + '_'
                 print(" what we formed so far " + mesg)
                 update.message.reply_markdown(mesg)
                 bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
