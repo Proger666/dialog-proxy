@@ -340,7 +340,7 @@ def check_auth(id):
 @run_async
 def process_request(bot, update):
     # secret zone
-    if update.message.text == 'Уебу':
+    if update.message.text == 'уебу':
         logger.error("Someone entered secret line, user:%s", str(update.message.from_user))
         update.message.reply_markdown("Анализирую....")
         if check_auth(update.message.from_user.id):
