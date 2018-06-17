@@ -19,7 +19,7 @@ CLIENT_ACCESS_TOKEN = '114a4b10c66c46dca27ad6f63cdc2ced'
 
 class USER:
     QUERY_STATUS = 'query_succ'
-    LOCATION = 'last_location'
+    LOCATION = 'last_location' 
     LAST_D_ACTION = 'last_dialog_action'
     LAST_MSG = 'last_msg'
 
@@ -78,6 +78,7 @@ MEMORY_DB = {'users_context': []}
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
+@run_async
 def start(bot, update):
     """Send a message when the command /start is issued."""
     session = get_user_session(update.message.from_user)
@@ -87,7 +88,7 @@ def start(bot, update):
     update.message.reply_text(resp['result']['fulfillment']['speech'])
     ask_user_location(update.message.chat_id, bot, update)
 
-
+@run_async
 def ask_user_location(chat_id, bot, update):
     get_user_session(update.message.from_user)
     location_keyboard = telegram.KeyboardButton(text="📌 Я здесь!", request_location=True)
@@ -399,7 +400,7 @@ def process_request(bot, update):
     set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
     parse_response(bot, chat_id, last_msg, session, query, update)
 
-
+@run_async
 def parse_response(bot, chat_id, last_msg, session, text, update):
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     # From dialog flow get action
@@ -462,7 +463,7 @@ def find_again_with_sort(bot, update, sort):
     #### REMEMBER OUR QUERY ####
     set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
 
-
+@run_async
 def parse_query(bot, chat_id, session, update, msg):
     ai = apiai.ApiAI(CLIENT_ACCESS_TOKEN)
     request = ai.text_request()
@@ -480,7 +481,7 @@ def parse_query(bot, chat_id, session, update, msg):
 def random_word():
     return "".join(random.choice('abcdertyulkzmxpoiqwv') for _ in range(int(random.choice('456789'))))
 
-
+@run_async
 def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
@@ -497,7 +498,7 @@ def save_user_location(chat_id, user, user_location):
         return False
     return True
 
-
+@run_async
 def location(bot, update):
     # get or create user session
     get_user_session(update.message.from_user)
@@ -520,7 +521,7 @@ def nothing_to_say(update, bot):
     update.message.reply_text("Мой разум...покой... Что хочешь смертный ?")
     return
 
-
+@run_async
 def HALP(bot, update):
     update.message.reply_markdown(
         "Я могу подсказать где найти твою любимую еду!\n "
