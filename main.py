@@ -348,6 +348,7 @@ def process_request(bot, update):
             logger.error("We gave all information to this user %s", str(update.message.from_user))
         else:
             update.message.reply_markdown("Go away infidel...*GO AWAAAYYY!!!*.\nAncients will rise again...")
+            return 
     """parse query and return response to the user"""
     # Get users query
     query = update.message.text
@@ -400,7 +401,6 @@ def process_request(bot, update):
     set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
     parse_response(bot, chat_id, last_msg, session, query, update)
 
-@run_async
 def parse_response(bot, chat_id, last_msg, session, text, update):
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
     # From dialog flow get action
@@ -463,7 +463,6 @@ def find_again_with_sort(bot, update, sort):
     #### REMEMBER OUR QUERY ####
     set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
 
-@run_async
 def parse_query(bot, chat_id, session, update, msg):
     ai = apiai.ApiAI(CLIENT_ACCESS_TOKEN)
     request = ai.text_request()
