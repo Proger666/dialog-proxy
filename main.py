@@ -88,7 +88,7 @@ def start(bot, update):
     update.message.reply_text(resp['result']['fulfillment']['speech'])
     ask_user_location(update.message.chat_id, bot, update)
 
-@run_async
+
 def ask_user_location(chat_id, bot, update):
     get_user_session(update.message.from_user)
     location_keyboard = telegram.KeyboardButton(text="📌 Я здесь!", request_location=True)
