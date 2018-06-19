@@ -306,7 +306,7 @@ def find_and_post_food(update, bot, query, sort):
                 reply_nothing_found(update, bot)
                 update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
                 return
-            if (resp['items'] is not None and len(resp['items']) > 0) and resp['items'][0]['search_score'] < 100:
+            if (resp['items'] is not None and len(resp['items']) > 0) and resp['items'][0]['search_score'] < 70:
                 update.message.reply_text("Чего-то мы точно такого же не нашли, но есть это:")
             for x in resp['items']:
                 print("we got resp from menuet" + str(x))
@@ -320,17 +320,16 @@ def find_and_post_food(update, bot, query, sort):
                 mesg = '*' + item_name + '*' + '    ' + '*' + item_price + '*' + '₽' + '\n' + \
                        '_' + item_ingrs + '_'
                 print(" what we formed so far " + mesg)
-                update.message.reply_markdown(mesg)
-                bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
+                try:
+                 update.message.reply_markdown(mesg)
+                 bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
                                latitude=getDataWithDefault(x, 'rest_lat'), title=getDataWithDefault(x, 'rest_name'),
                                address=getDataWithDefault(x, 'rest_addr'),
                                foursquare_id=getDataWithDefault(x, 'foursquare_id'))
-                time.sleep(1)
-
-            send_result_options_buttons(update.message.chat_id, bot)
-    except TimeoutError:
-        logger.warning("Timeout occured !!!")
-
+                 time.sleep(1.5)
+                 send_result_options_buttons(update.message.chat_id, bot)
+                except TimeoutError:
+                    logger.warning("Timeout occured !!!")
     except Exception as e:
         logger.error("We failed to response!!!! %s", str(e))
         reply_nothing_found(update, bot)
