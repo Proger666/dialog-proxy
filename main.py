@@ -261,6 +261,15 @@ def getDataWithDefault(list, key):
     else:
         return DEFAULT_NODATA
 
+from PIL import Image, ImageDraw, ImageFont
+
+def build_score_img():
+    '''Return img with score on it'''
+    image = Image.open('254469.png')
+    draw = ImageDraw.Draw(image)
+
+    pass
+
 
 def find_and_post_food(update, bot, query, sort):
     try:  # do we know where user is ?
@@ -272,6 +281,7 @@ def find_and_post_food(update, bot, query, sort):
         if query is None or len(query) == 0:
             update.message.reply_text("Чет мы не поняли твоего вопроса, скажи по-другому ?")
             return
+        update.message.reply_text('Ищем...')
         resp = get_food_for_user_with_loc(bot, update, query, sort)
         print(resp)
         if resp is None:  # not resp:
@@ -312,6 +322,7 @@ def find_and_post_food(update, bot, query, sort):
                 print("we got resp from menuet" + str(x))
                 item_name = x.get('item_name', "")
                 item_price = str(x.get('item_price', ""))
+                #score_img = build_score_img()
                 try:
                     item_ingrs = ",".join([y for y in x["item_ingrs"]['name']])
                 except:
@@ -320,6 +331,7 @@ def find_and_post_food(update, bot, query, sort):
                 mesg = '*' + item_name + '*' + '    ' + '*' + item_price + '*' + '₽' + '\n' + \
                        '_' + item_ingrs + '_'
                 print(" what we formed so far " + mesg)
+
                 try:
                  update.message.reply_markdown(mesg)
                  bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
@@ -330,6 +342,7 @@ def find_and_post_food(update, bot, query, sort):
                  send_result_options_buttons(update.message.chat_id, bot)
                 except TimeoutError:
                     logger.warning("Timeout occured !!!")
+
     except Exception as e:
         logger.error("We failed to response!!!! %s", str(e))
         reply_nothing_found(update, bot)
