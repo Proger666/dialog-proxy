@@ -316,6 +316,7 @@ def find_and_post_food(update, bot, query, sort):
                 reply_nothing_found(update, bot)
                 update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
                 return
+            logger.warning("we got response from menuet %s", str(resp['items']))
             if (resp['items'] is not None and len(resp['items']) > 0) and resp['items'][0]['search_score'] <= 70:
                 update.message.reply_text("Чего-то мы точно такого же не нашли, но есть это:")
             for x in resp['items']:
