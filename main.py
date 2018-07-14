@@ -226,7 +226,8 @@ def set_to_memory_DB(user, key, value):
     for item in MEMORY_DB['users_context']:
         if item['user_id'] == user.id:
             item[key] = value
-            break
+            return value
+
     pass
 
 
@@ -464,6 +465,15 @@ def process_request(bot, update):
     logger.info("starting to process query %s for user %s", query, update.message.from_user.id)
     parse_response(bot, chat_id, last_msg, session, query, update)
 
+def wait_for_response(e, update):
+    wait_phrases = ["перебираем горох", "шуршим по меню","советуемся со старшими", "узнаем у шеф повара", "орем на официанта", "тыкаем рестораны палочкой","ищем по углам",
+                    "сравниваем ингредиенты", "🍳🍽"]
+    while not e.isSet():
+        time.sleep(4)
+        if not e.isSet():
+            update.message.reply_text(random.choice(wait_phrases))
+    e.clear()
+
 
 def parse_response(bot, chat_id, last_msg, session, text, update):
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
@@ -519,7 +529,7 @@ def parse_response(bot, chat_id, last_msg, session, text, update):
         user_thread = get_from_memory_DB(update.message.from_user, "thread")
         if user_thread is None:
             # new thread and pass query and event for thread watch:
-            e = threading.Event()
+            e = set_to_memory_DB(update.message.from_user, 'event', threading.Event())
             query_thread = threading.Thread(target=find_and_post_food,
                                             args=(update, bot, response['result']['parameters']['food'], None, e))
             query_thread.start()
@@ -527,6 +537,8 @@ def parse_response(bot, chat_id, last_msg, session, text, update):
                         update.message.from_user.username)
             set_to_memory_DB(update.message.from_user, 'thread', query_thread)
             set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
+            waiter_thread = threading.Thread(target=wait_for_response, args=(e, update))
+            waiter_thread.start()
         else:
             # if [x for x in threads if x['user_id'] == update.message.from_user.id][0].isAlive():
             update.message.reply_text("Щас, щас, щас подожди, шуршим шестеренками!")
@@ -541,7 +553,7 @@ def parse_response(bot, chat_id, last_msg, session, text, update):
 
 def find_again_with_sort(bot, update, sort):
     last_query = get_from_memory_DB(update.message.from_user, 'last_query')
-    find_and_post_food(update, bot, last_query, sort)
+    find_and_post_food(update, bot, last_query, sort, get_from_memory_DB(update.message.from_user, 'event'))
     logger.info("we repeating query " + str(last_query))
     #### REMEMBER OUR QUERY ####
     set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
