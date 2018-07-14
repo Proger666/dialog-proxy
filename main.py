@@ -416,7 +416,7 @@ def process_request(bot, update):
     logger.warning("User said to us: " + str(query))
 
     # First check if we have a session
-    # Dont care about question ATM
+    # Dont care about questison ATM
     session = check_user_context(update.message.from_user)
 
     # create new session if not exist
