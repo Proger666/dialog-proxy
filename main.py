@@ -358,10 +358,12 @@ def find_and_post_food(update, bot, query, sort, event):
                                    address=getDataWithDefault(x, 'rest_addr'),
                                    foursquare_id=getDataWithDefault(x, 'foursquare_id'))
                     time.sleep(0.9)
-                    send_result_options_buttons(update.message.chat_id, bot)
+
                 except TimeoutError:
                     logger.warning("Timeout occured !!!")
                     kill_thread(update.message.from_user, event)
+            send_result_options_buttons(update.message.chat_id, bot)
+
 
 
     except Exception as e:
