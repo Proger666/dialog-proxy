@@ -268,25 +268,17 @@ def getDataWithDefault(list, key):
 from PIL import Image, ImageDraw
 
 
-def build_score_img():
-    '''Return img with score on it'''
-    image = Image.open('254469.png')
-    draw = ImageDraw.Draw(image)
-
-    pass
-
-
 threads = [{"user_id": "", "thread": ""}]
 
 
-def find_and_post_food(update, bot, query, sort, e):
+def find_and_post_food(update, bot, query, sort, event):
     logger.info("started to parse query %s for user %s: %s", query, update.message.from_user.id,
                 update.message.from_user.username)
     try:  # do we know where user is ?
 
         if query is None or len(query) == 0:
             update.message.reply_text("Чет мы не поняли твоего вопроса, скажи по-другому ?")
-            set_to_memory_DB(update.message.from_user, 'thread', None)
+            kill_thread(update.message.from_user, event)
             return
         update.message.reply_text('Ищем...')
 
@@ -310,12 +302,12 @@ def find_and_post_food(update, bot, query, sort, e):
         logger.error("we got response %s", resp)
         if resp is None:  # not resp:
             reply_nothing_found(update, bot)
-            set_to_memory_DB(update.message.from_user, 'thread', None)
+            kill_thread(update.message.from_user, event)
             return
         elif len(resp) == 0:
             reply_nothing_found(update, bot)
             # ALWAYS USE FUCKING GET!!!! not direct point to list name!!
-            set_to_memory_DB(update.message.from_user, 'thread', None)
+            kill_thread(update.message.from_user, event)
             return
 
         elif resp.get('status') == 'error':
@@ -323,7 +315,7 @@ def find_and_post_food(update, bot, query, sort, e):
                 'MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user, 'last_msg')) +
                 str(resp))
             update.message.reply_text("мэнует предатель, к оружию!\n" + str(resp))
-            set_to_memory_DB(update.message.from_user, 'thread', None)
+            kill_thread(update.message.from_user, event)
             return
 
         else:
@@ -370,18 +362,22 @@ def find_and_post_food(update, bot, query, sort, e):
                     send_result_options_buttons(update.message.chat_id, bot)
                 except TimeoutError:
                     logger.warning("Timeout occured !!!")
-                    set_to_memory_DB(update.message.from_user, 'thread', None)
+                    kill_thread(update.message.from_user, event)
 
 
     except Exception as e:
         logger.error("We failed to response!!!! %s", str(e))
         reply_nothing_found(update, bot)
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
-        set_to_memory_DB(update.message.from_user, 'thread', None)
-
+        kill_thread(update.message.from_user, event)
     # end of the function
-    e.set()
+    event.set()
     set_to_memory_DB(update.message.from_user, 'thread', None)
+
+def kill_thread(user, event):
+    set_to_memory_DB(user, 'thread', None)
+    event.set()
+    logger.info("Thread and event cleared for user %s:%s", user.id, user.username)
 
 
 def check_auth(id):
