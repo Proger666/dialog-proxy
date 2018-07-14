@@ -549,6 +549,9 @@ def parse_response(bot, chat_id, last_msg, session, text, update):
 
 def find_again_with_sort(bot, update, sort):
     last_query = get_from_memory_DB(update.message.from_user, 'last_query')
+    if last_query is None:
+        update.message.reply_text("Память меня подводит... какое блюдо ты хотел ?")
+        return
     find_and_post_food(update, bot, last_query, sort, get_from_memory_DB(update.message.from_user, 'event'))
     logger.info("we repeating query " + str(last_query))
     #### REMEMBER OUR QUERY ####
