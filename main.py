@@ -357,7 +357,7 @@ def find_and_post_food(update, bot, query, sort, event):
                                    latitude=getDataWithDefault(x, 'rest_lat'), title=getDataWithDefault(x, 'rest_name'),
                                    address=getDataWithDefault(x, 'rest_addr'),
                                    foursquare_id=getDataWithDefault(x, 'foursquare_id'))
-                    time.sleep(0.9)
+                    time.sleep(0.3)
 
                 except TimeoutError:
                     logger.warning("Timeout occured !!!")
