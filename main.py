@@ -281,7 +281,6 @@ def find_and_post_food(update, bot, query, sort, event):
             kill_thread(update.message.from_user, event)
             return
         update.message.reply_text('Ищем...')
-
         # Create empty event when we got resp from menuet
 
         # check if we have thread for query
