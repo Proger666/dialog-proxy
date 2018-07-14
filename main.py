@@ -414,6 +414,7 @@ def process_request(bot, update):
 
     chat_id = update.message.chat_id
     logger.warning("User said to us: " + str(query))
+
     # First check if we have a session
     # Dont care about question ATM
     session = check_user_context(update.message.from_user)
