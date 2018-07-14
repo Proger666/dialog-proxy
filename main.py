@@ -5,6 +5,7 @@ from __future__ import print_function
 import json
 import os
 import random
+import threading
 import time
 
 import telegram
@@ -20,7 +21,7 @@ CLIENT_ACCESS_TOKEN = '114a4b10c66c46dca27ad6f63cdc2ced'
 
 class USER:
     QUERY_STATUS = 'query_succ'
-    LOCATION = 'last_location' 
+    LOCATION = 'last_location'
     LAST_D_ACTION = 'last_dialog_action'
     LAST_MSG = 'last_msg'
 
@@ -173,28 +174,29 @@ def get_user_last_location(user):
     return None
 
 
-def get_food_for_user_with_loc(bot, update, food, sort):
+def get_food_for_user_with_loc(bot, update, query, sort):
     session = check_user_context(update.message.from_user)
     if session is None:
         set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
         ask_user_location(chat_id=update.message.chat_id, bot=bot, update=update)
+
         return None
     # should not be None
     user_location = get_from_memory_DB(update.message.from_user, 'last_location')
 
     payload = {'action': 'get_food_loc', 'token': MENUET_TOKEN,
                'user_id': update.message.from_user.id,
-               'query': "".join(food),
+               'query': "".join(query),
                "loc_lng": user_location['longitude'],
                "loc_lat": user_location['latitude'],
                "sort": sort}
     # send query to backend
     headers = {'Content-type': 'application/json'}
+    logger.info("sending query %s to menuet",query)
     r = requests.post(MENUET_API, json.dumps(payload), verify=False, headers=headers)
     if r.status_code != 200:
-        logger.warning(
-            "we failed to get data from menuet for food " + food + " chat_id:" + str(update.message.chat_id) + str(
-                r.content))
+        logger.error(
+            "we failed to get data from menuet for food " + (str(query)) + " chat_id:" + str(update.message.chat_id))
         return {'status': 'error', 'msg': 'menuet down'}
     elif r.status_code == 200:
         if len(r.content) == 0:
@@ -261,7 +263,9 @@ def getDataWithDefault(list, key):
     else:
         return DEFAULT_NODATA
 
-from PIL import Image, ImageDraw, ImageFont
+
+from PIL import Image, ImageDraw
+
 
 def build_score_img():
     '''Return img with score on it'''
@@ -271,32 +275,54 @@ def build_score_img():
     pass
 
 
-def find_and_post_food(update, bot, query, sort):
+threads = [{"user_id": "", "thread": ""}]
+
+
+def find_and_post_food(update, bot, query, sort, e):
+    logger.info("started to parse query %s for user %s: %s", query, update.message.from_user.id,
+                update.message.from_user.username)
     try:  # do we know where user is ?
-        location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
-        if location is None:
-            ask_user_location(update.message.chat_id, bot, update)
-            set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
-            return
+
         if query is None or len(query) == 0:
             update.message.reply_text("Чет мы не поняли твоего вопроса, скажи по-другому ?")
+            set_to_memory_DB(update.message.from_user, 'thread', None)
             return
         update.message.reply_text('Ищем...')
+
+        # Create empty event when we got resp from menuet
+
+        # check if we have thread for query
+        start = datetime.datetime.now()
         resp = get_food_for_user_with_loc(bot, update, query, sort)
-        print(resp)
+        end = datetime.datetime.now() - start
+        logger.info("we got response from menuet in %s", end)
+        # resp = []
+        #
+        #
+        # if not t.isAlive():
+        #
+        #
+        #     t = get_resp(bot, update, query, sort, e)
+        #     t.start()
+        # else:
+        #     update.message.reply_text("")
+        logger.error("we got response %s", resp)
         if resp is None:  # not resp:
             reply_nothing_found(update, bot)
+            set_to_memory_DB(update.message.from_user, 'thread', None)
             return
         elif len(resp) == 0:
             reply_nothing_found(update, bot)
             # ALWAYS USE FUCKING GET!!!! not direct point to list name!!
+            set_to_memory_DB(update.message.from_user, 'thread', None)
             return
 
         elif resp.get('status') == 'error':
             logger.error(
-                'MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user.id, 'last_msg')) +
+                'MENUET RETURNED ERROR!!!! ' + str(get_from_memory_DB(update.message.from_user, 'last_msg')) +
                 str(resp))
-            update.message.reply_text("мэнуетт предатель, к оружию!" + str(resp))
+            update.message.reply_text("мэнует предатель, к оружию!\n" + str(resp))
+            set_to_memory_DB(update.message.from_user, 'thread', None)
             return
 
         else:
@@ -323,7 +349,7 @@ def find_and_post_food(update, bot, query, sort):
                 print("we got resp from menuet" + str(x))
                 item_name = x.get('item_name', "")
                 item_price = str(x.get('item_price', ""))
-                #score_img = build_score_img()
+                # score_img = build_score_img()
                 try:
                     item_ingrs = ",".join([y for y in x["item_ingrs"]['name']])
                 except:
@@ -334,24 +360,31 @@ def find_and_post_food(update, bot, query, sort):
                 print(" what we formed so far " + mesg)
 
                 try:
-                 update.message.reply_markdown(mesg)
-                 bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
-                               latitude=getDataWithDefault(x, 'rest_lat'), title=getDataWithDefault(x, 'rest_name'),
-                               address=getDataWithDefault(x, 'rest_addr'),
-                               foursquare_id=getDataWithDefault(x, 'foursquare_id'))
-                 time.sleep(0.9)
-                 send_result_options_buttons(update.message.chat_id, bot)
+                    update.message.reply_markdown(mesg)
+                    bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
+                                   latitude=getDataWithDefault(x, 'rest_lat'), title=getDataWithDefault(x, 'rest_name'),
+                                   address=getDataWithDefault(x, 'rest_addr'),
+                                   foursquare_id=getDataWithDefault(x, 'foursquare_id'))
+                    time.sleep(0.9)
+                    send_result_options_buttons(update.message.chat_id, bot)
                 except TimeoutError:
                     logger.warning("Timeout occured !!!")
+                    set_to_memory_DB(update.message.from_user, 'thread', None)
+
 
     except Exception as e:
         logger.error("We failed to response!!!! %s", str(e))
         reply_nothing_found(update, bot)
         update.message.reply_markdown("я сломался от твоего вопроса ;( попробуй другой ? " + str(e))
+        set_to_memory_DB(update.message.from_user, 'thread', None)
+
+    # end of the function
+    e.set()
+    set_to_memory_DB(update.message.from_user, 'thread', None)
 
 
 def check_auth(id):
-    awesome_ones = []
+    awesome_ones = [348861788]
     if id not in awesome_ones:
         return False
     else:
@@ -361,14 +394,23 @@ def check_auth(id):
 @run_async
 def process_request(bot, update):
     # secret zone
-    if update.message.text == 'уебу':
+    # Secret SetUP
+    secretChatPhrase = ['уебу', 'убейся']
+    #
+    if update.message.text in secretChatPhrase:
         logger.error("Someone entered secret line, user:%s", str(update.message.from_user))
-        update.message.reply_markdown("Анализирую....")
         if check_auth(update.message.from_user.id):
             logger.error("We gave all information to this user %s", str(update.message.from_user))
+            if update.message.text == 'уебу':
+                update.message.reply_text("Уебет :(")
+            elif update.message.text == 'убейся':
+                set_to_memory_DB(update.message.from_user, "thread", None)
+                update.message.reply_markdown("I..must comply.. Thread has been killed..")
+                return
         else:
             update.message.reply_markdown("Go away infidel...*GO AWAAAYYY!!!*.\nAncients will rise again...")
-            return 
+            return
+
     """parse query and return response to the user"""
     # Get users query
     query = update.message.text
@@ -419,7 +461,9 @@ def process_request(bot, update):
     # do we already have a question ?
     # lets set query status to false = we are working on it
     set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, False)
+    logger.info("starting to process query %s for user %s", query, update.message.from_user.id)
     parse_response(bot, chat_id, last_msg, session, query, update)
+
 
 def parse_response(bot, chat_id, last_msg, session, text, update):
     response = parse_query(bot, chat_id, session, update, last_msg if last_msg != '' else text)
@@ -465,8 +509,27 @@ def parse_response(bot, chat_id, last_msg, session, text, update):
             set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
             return
     elif action == 'get-food':
-        find_and_post_food(update, bot, response['result']['parameters']['food'], None)
-        set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
+        logger.info("Got qery for food, query: %s, for user %s", last_msg, update.message.from_user.id)
+        location = get_from_memory_DB(update.message.from_user, USER.LOCATION)
+        if location is None:
+            ask_user_location(update.message.chat_id, bot, update)
+            set_to_memory_DB(update.message.from_user, 'last_msg', update.message.text)
+            return
+        # do we have query for this user?
+        user_thread = get_from_memory_DB(update.message.from_user, "thread")
+        if user_thread is None:
+            # new thread and pass query and event for thread watch:
+            e = threading.Event()
+            query_thread = threading.Thread(target=find_and_post_food,
+                                            args=(update, bot, response['result']['parameters']['food'], None, e))
+            query_thread.start()
+            logger.info("started new thread for user %s: %s", update.message.from_user.id,
+                        update.message.from_user.username)
+            set_to_memory_DB(update.message.from_user, 'thread', query_thread)
+            set_to_memory_DB(update.message.from_user, 'last_query', last_msg)
+        else:
+            # if [x for x in threads if x['user_id'] == update.message.from_user.id][0].isAlive():
+            update.message.reply_text("Щас, щас, щас подожди, шуршим шестеренками!")
     else:
         update.message.reply_text(response['result']['fulfillment']['speech'])
     # detect_intent_texts(
@@ -482,6 +545,7 @@ def find_again_with_sort(bot, update, sort):
     logger.info("we repeating query " + str(last_query))
     #### REMEMBER OUR QUERY ####
     set_to_memory_DB(update.message.from_user, 'last_msg', last_query)
+
 
 def parse_query(bot, chat_id, session, update, msg):
     ai = apiai.ApiAI(CLIENT_ACCESS_TOKEN)
@@ -500,6 +564,7 @@ def parse_query(bot, chat_id, session, update, msg):
 def random_word():
     return "".join(random.choice('abcdertyulkzmxpoiqwv') for _ in range(int(random.choice('456789'))))
 
+
 @run_async
 def error(bot, update, error):
     """Log Errors caused by Updates."""
@@ -517,6 +582,7 @@ def save_user_location(chat_id, user, user_location):
         return False
     return True
 
+
 @run_async
 def location(bot, update):
     # get or create user session
@@ -527,8 +593,8 @@ def location(bot, update):
                 user_location.longitude)
     set_to_memory_DB(update.message.from_user, 'last_location', user_location)
     update.message.reply_text('Отлично!')
-    if not save_user_location(update.message.chat_id, user, user_location):
-        logger.error("Failed to save data to menuet")
+    # if not save_user_location(update.message.chat_id, user, user_location):
+    #     logger.error("Failed to save data to menuet")
     set_to_memory_DB(update.message.from_user, 'last_action', 'location')
 
     set_to_memory_DB(update.message.from_user, USER.QUERY_STATUS, True)
@@ -539,6 +605,7 @@ def location(bot, update):
 def nothing_to_say(update, bot):
     update.message.reply_text("Мой разум...покой... Что хочешь смертный ?")
     return
+
 
 @run_async
 def HALP(bot, update):
