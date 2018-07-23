@@ -641,6 +641,9 @@ def HALP(bot, update):
 
 def main():
     """Start the bot."""
+    # set request limit
+    set_to_memory_DB(USER, "req_limit", 0)
+
     # Create the EventHandler and pass it your bot's token.
     updater = Updater("534041755:AAF8uLqAWAFsOY7jqPRwaT_LyFUoFdNogbY")
 
