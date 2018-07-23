@@ -363,6 +363,8 @@ def find_and_post_food(update, bot, query, sort, event):
                 except TimeoutError:
                     logger.warning("Timeout occured !!!")
                     kill_thread(update.message.from_user, event)
+                except telegram.TelegramError:
+                    logger.info("We got telega error")
             send_result_options_buttons(update.message.chat_id, bot)
 
 
