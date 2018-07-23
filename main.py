@@ -45,7 +45,7 @@ def index():
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.DEBUG, filename="dialog.log")
+                    level=logging.INFO, filename="dialog.log")
 
 logger = logging.getLogger(__name__)
 
@@ -400,10 +400,10 @@ def process_request(bot, update):
         set_to_memory_DB(USER, "req_limit", 0)
     else:
         set_to_memory_DB(USER,"req_limit", limit+1)
-
+    logger.info("current request limit is %s", limit)
     # secret zone
     # Secret SetUP
-    secretChatPhrase = ['уебу', 'убейся']
+    secretChatPhrase = ['уебу', 'убейся', "схерали"]
     #
     if update.message.text in secretChatPhrase:
         logger.error("Someone entered secret line, user:%s", str(update.message.from_user))
