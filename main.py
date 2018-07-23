@@ -24,6 +24,7 @@ class USER:
     LOCATION = 'last_location'
     LAST_D_ACTION = 'last_dialog_action'
     LAST_MSG = 'last_msg'
+    id = '1' # technical id
 
 
 # [START import_libraries]
@@ -391,6 +392,13 @@ def check_auth(id):
 
 @run_async
 def process_request(bot, update):
+    # get current request limit
+    limit = get_from_memory_DB(USER,"req_limit")
+    if limit > 30:
+        time.sleep(1000)
+    else:
+        set_to_memory_DB(USER,"req_limit", limit+1)
+
     # secret zone
     # Secret SetUP
     secretChatPhrase = ['уебу', 'убейся']
