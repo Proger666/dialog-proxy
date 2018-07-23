@@ -395,7 +395,9 @@ def process_request(bot, update):
     # get current request limit
     limit = get_from_memory_DB(USER,"req_limit")
     if limit > 30:
+        #sleep abit because telegram will ban us
         time.sleep(1000)
+        set_to_memory_DB(USER, "req_limit", 0)
     else:
         set_to_memory_DB(USER,"req_limit", limit+1)
 
