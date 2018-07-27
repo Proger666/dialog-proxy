@@ -354,6 +354,7 @@ def find_and_post_food(update, bot, query, sort, event):
 
                 try:
                     update.message.reply_markdown(mesg)
+                    time.sleep(0.1)
                     bot.send_venue(chat_id=update.message.chat_id, longitude=getDataWithDefault(x, 'rest_long'),
                                    latitude=getDataWithDefault(x, 'rest_lat'), title=getDataWithDefault(x, 'rest_name'),
                                    address=getDataWithDefault(x, 'rest_addr'),
