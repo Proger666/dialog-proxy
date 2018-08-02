@@ -20,6 +20,7 @@ CLIENT_ACCESS_TOKEN = '114a4b10c66c46dca27ad6f63cdc2ced'
 
 
 class USER:
+    SCORE_THRESHOLD = 150
     QUERY_STATUS = 'query_succ'
     LOCATION = 'last_location'
     LAST_D_ACTION = 'last_dialog_action'
@@ -336,7 +337,7 @@ def find_and_post_food(update, bot, query, sort, event):
                 update.message.reply_text('У нас тут все умерло :( Ща починим, погоди')
                 return
             logger.error("we got response from menuet %s", str(resp))
-            if (resp['items'] is not None and len(resp['items']) > 0) and resp['items'][0]['search_score'] <= 70:
+            if (resp['items'] is not None and len(resp['items']) > 0) and resp['items'][0]['search_score'] <= USER.SCORE_THRESHOLD:
                 update.message.reply_text("Чего-то мы точно такого же не нашли, но есть это:")
             for x in resp['items']:
                 print("we got resp from menuet" + str(x))
