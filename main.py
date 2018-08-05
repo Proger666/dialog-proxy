@@ -350,7 +350,7 @@ def find_and_post_food(update, bot, query, sort, event):
                     logger.warning("We failed to parse ingrs, %s", x['item_ingrs'])
                     item_ingrs = ""
                 mesg = '*' + item_name + '*' + '    ' + '*' + item_price + '*' + '₽' + '\n' + \
-                       '_' + item_ingrs + '_'
+                       '_' + item_ingrs + '_' + x['search_score']
                 print(" what we formed so far " + mesg)
 
                 try:
